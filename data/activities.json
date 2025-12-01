@@ -1,0 +1,69 @@
+[
+    {
+        "id": "1",
+        "leadId": "1",
+        "type": "Note",
+        "title": "Initial contact made",
+        "description": "Contacted via phone, interested in our services",
+        "createdDate": "2025-01-15T10:30:00Z",
+        "createdBy": "John Doe"
+    },
+    {
+        "id": "2",
+        "leadId": "1",
+        "type": "Call",
+        "title": "Phone call",
+        "description": "Discussed pricing and service packages",
+        "duration": "15 minutes",
+        "createdDate": "2025-01-14T14:00:00Z",
+        "createdBy": "John Doe"
+    },
+    {
+        "id": "3",
+        "leadId": "2",
+        "type": "Email",
+        "title": "Email sent",
+        "description": "Sent proposal and pricing information",
+        "subject": "Proposal for Mavi Dental Klinik",
+        "createdDate": "2025-01-14T14:20:00Z",
+        "createdBy": "Jane Smith"
+    },
+    {
+        "id": "4",
+        "leadId": "3",
+        "type": "WhatsApp",
+        "title": "WhatsApp message sent",
+        "description": "Sent promotional message via WhatsApp",
+        "createdDate": "2025-01-13T09:15:00Z",
+        "createdBy": "John Doe"
+    },
+    {
+        "id": "5",
+        "leadId": "4",
+        "type": "Task",
+        "title": "Task completed",
+        "description": "Follow-up call completed successfully",
+        "createdDate": "2025-01-12T16:45:00Z",
+        "createdBy": "Jane Smith"
+    },
+    {
+        "id": "6",
+        "leadId": "5",
+        "type": "Campaign",
+        "title": "Campaign interaction",
+        "description": "Lead interacted with WhatsApp campaign",
+        "campaignName": "WhatsApp Campaign - Oto Servisler",
+        "createdDate": "2025-01-11T11:30:00Z",
+        "createdBy": "System"
+    },
+    {
+        "id": "7",
+        "leadId": "1",
+        "type": "Meeting",
+        "title": "Meeting scheduled",
+        "description": "Scheduled meeting for next week",
+        "meetingDate": "2025-01-22T10:00:00Z",
+        "createdDate": "2025-01-15T11:00:00Z",
+        "createdBy": "John Doe"
+    }
+]

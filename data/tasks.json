@@ -1,0 +1,74 @@
+[
+    {
+        "id": "1",
+        "taskName": "Follow up with Gül Kuaför",
+        "relatedLeadId": "1",
+        "relatedLeadName": "Gül Kuaför",
+        "dueDate": "2025-12-01T10:00:00Z",
+        "status": "Pending",
+        "type": "Call",
+        "description": "Call to discuss pricing and services",
+        "assignedTo": "John Doe",
+        "createdDate": "2025-12-15T09:00:00Z"
+    },
+    {
+        "id": "2",
+        "taskName": "Send proposal to Mavi Dental",
+        "relatedLeadId": "2",
+        "relatedLeadName": "Mavi Dental Klinik",
+        "dueDate": "2025-12-01T14:00:00Z",
+        "status": "Pending",
+        "type": "Email",
+        "description": "Send detailed proposal via email",
+        "assignedTo": "Jane Smith",
+        "createdDate": "2025-12-14T10:00:00Z"
+    },
+    {
+        "id": "3",
+        "taskName": "Visit Lezzet Döner",
+        "relatedLeadId": "3",
+        "relatedLeadName": "Lezzet Döner",
+        "dueDate": "2025-12-01T16:00:00Z",
+        "status": "Completed",
+        "type": "Visit",
+        "description": "On-site visit to discuss partnership",
+        "assignedTo": "John Doe",
+        "createdDate": "2025-12-13T08:00:00Z"
+    },
+    {
+        "id": "4",
+        "taskName": "WhatsApp follow-up",
+        "relatedLeadId": "4",
+        "relatedLeadName": "İstanbul Temizlik",
+        "dueDate": "2025-12-01T11:00:00Z",
+        "status": "Pending",
+        "type": "WhatsApp",
+        "description": "Send WhatsApp message with special offer",
+        "assignedTo": "Jane Smith",
+        "createdDate": "2025-12-12T15:00:00Z"
+    },
+    {
+        "id": "5",
+        "taskName": "Schedule meeting with Ada Oto",
+        "relatedLeadId": "5",
+        "relatedLeadName": "Ada Oto Servis",
+        "dueDate": "2025-12-01T10:00:00Z",
+        "status": "Pending",
+        "type": "Meeting",
+        "description": "Schedule a meeting to discuss services",
+        "assignedTo": "John Doe",
+        "createdDate": "2025-12-11T12:00:00Z"
+    },
+    {
+        "id": "6",
+        "taskName": "Review Elite Fitness proposal",
+        "relatedLeadId": "6",
+        "relatedLeadName": "Elite Fitness Center",
+        "dueDate": "2025-12-01T15:00:00Z",
+        "status": "Completed",
+        "type": "Follow-up",
+        "description": "Review and respond to proposal",
+        "assignedTo": "Jane Smith",
+        "createdDate": "2025-12-10T09:00:00Z"
+    }
+]

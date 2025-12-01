@@ -1,0 +1,82 @@
+[
+    {
+        "id": "1",
+        "name": "İstanbul Kuaför Listesi",
+        "status": "Completed",
+        "leadCount": 45,
+        "dateCreated": "2025-01-01T10:00:00Z",
+        "lastUpdated": "2025-01-15T10:30:00Z",
+        "city": "İstanbul",
+        "district": "Kadıköy",
+        "keywords": [
+            "kuaför",
+            "saç",
+            "güzellik"
+        ],
+        "description": "İstanbul Kadıköy bölgesindeki kuaför ve güzellik salonları listesi"
+    },
+    {
+        "id": "2",
+        "name": "İstanbul Sağlık Listesi",
+        "status": "Processing",
+        "leadCount": 32,
+        "dateCreated": "2025-01-05T09:00:00Z",
+        "lastUpdated": "2025-01-14T14:20:00Z",
+        "city": "İstanbul",
+        "district": "Şişli",
+        "keywords": [
+            "dental",
+            "klinik",
+            "sağlık"
+        ],
+        "description": "İstanbul Şişli bölgesindeki sağlık kuruluşları ve klinikler"
+    },
+    {
+        "id": "3",
+        "name": "İstanbul Restoran Listesi",
+        "status": "Completed",
+        "leadCount": 78,
+        "dateCreated": "2025-01-02T11:00:00Z",
+        "lastUpdated": "2025-01-13T09:15:00Z",
+        "city": "İstanbul",
+        "district": "Beşiktaş",
+        "keywords": [
+            "restoran",
+            "yemek",
+            "cafe"
+        ],
+        "description": "İstanbul Beşiktaş bölgesindeki restoran ve cafe listesi"
+    },
+    {
+        "id": "4",
+        "name": "İstanbul Hizmet Listesi",
+        "status": "Pending",
+        "leadCount": 28,
+        "dateCreated": "2025-01-10T08:00:00Z",
+        "lastUpdated": "2025-01-12T16:45:00Z",
+        "city": "İstanbul",
+        "district": "Üsküdar",
+        "keywords": [
+            "temizlik",
+            "hizmet",
+            "bakım"
+        ],
+        "description": "İstanbul Üsküdar bölgesindeki temizlik ve bakım hizmetleri"
+    },
+    {
+        "id": "5",
+        "name": "İstanbul Oto Servis Listesi",
+        "status": "Completed",
+        "leadCount": 56,
+        "dateCreated": "2025-01-03T12:00:00Z",
+        "lastUpdated": "2025-01-11T11:30:00Z",
+        "city": "İstanbul",
+        "district": "Beylikdüzü",
+        "keywords": [
+            "oto",
+            "servis",
+            "araba"
+        ],
+        "description": "İstanbul Beylikdüzü bölgesindeki oto servis ve tamirhaneler"
+    }
+]
