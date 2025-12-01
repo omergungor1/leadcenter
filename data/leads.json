@@ -18,7 +18,17 @@
             "VIP"
         ],
         "lastActivity": "2025-01-15T10:30:00Z",
-        "status": "active"
+        "status": "active",
+        "hasWhatsApp": true,
+        "workingHours": {
+            "Pazartesi": "09:00–21:00",
+            "Salı": "09:00–21:00",
+            "Çarşamba": "09:00–21:00",
+            "Perşembe": "09:00–21:00",
+            "Cuma": "09:00–21:00",
+            "Cumartesi": "09:00–21:00",
+            "Pazar": "09:00–21:00"
+        }
     },
     {
         "id": "2",
@@ -39,7 +49,17 @@
             "Premium"
         ],
         "lastActivity": "2025-01-14T14:20:00Z",
-        "status": "active"
+        "status": "active",
+        "hasWhatsApp": true,
+        "workingHours": {
+            "Pazartesi": "09:00–21:00",
+            "Salı": "09:00–21:00",
+            "Çarşamba": "09:00–21:00",
+            "Perşembe": "09:00–21:00",
+            "Cuma": "09:00–21:00",
+            "Cumartesi": "09:00–21:00",
+            "Pazar": "09:00–21:00"
+        }
     },
     {
         "id": "3",
@@ -59,7 +79,17 @@
             "Fast Food"
         ],
         "lastActivity": "2025-01-13T09:15:00Z",
-        "status": "active"
+        "status": "active",
+        "hasWhatsApp": false,
+        "workingHours": {
+            "Pazartesi": "09:00–21:00",
+            "Salı": "09:00–21:00",
+            "Çarşamba": "09:00–21:00",
+            "Perşembe": "09:00–21:00",
+            "Cuma": "09:00–21:00",
+            "Cumartesi": "09:00–21:00",
+            "Pazar": "09:00–21:00"
+        }
     },
     {
         "id": "4",
@@ -79,7 +109,17 @@
             "Commercial"
         ],
         "lastActivity": "2025-01-12T16:45:00Z",
-        "status": "active"
+        "status": "active",
+        "hasWhatsApp": true,
+        "workingHours": {
+            "Pazartesi": "09:00–21:00",
+            "Salı": "09:00–21:00",
+            "Çarşamba": "09:00–21:00",
+            "Perşembe": "09:00–21:00",
+            "Cuma": "09:00–21:00",
+            "Cumartesi": "09:00–21:00",
+            "Pazar": "09:00–21:00"
+        }
     },
     {
         "id": "5",
@@ -99,7 +139,17 @@
             "Service"
         ],
         "lastActivity": "2025-01-11T11:30:00Z",
-        "status": "active"
+        "status": "active",
+        "hasWhatsApp": false,
+        "workingHours": {
+            "Pazartesi": "09:00–21:00",
+            "Salı": "09:00–21:00",
+            "Çarşamba": "09:00–21:00",
+            "Perşembe": "09:00–21:00",
+            "Cuma": "09:00–21:00",
+            "Cumartesi": "09:00–21:00",
+            "Pazar": "09:00–21:00"
+        }
     },
     {
         "id": "6",
@@ -120,7 +170,17 @@
             "VIP"
         ],
         "lastActivity": "2025-01-10T08:20:00Z",
-        "status": "active"
+        "status": "active",
+        "hasWhatsApp": true,
+        "workingHours": {
+            "Pazartesi": "09:00–21:00",
+            "Salı": "09:00–21:00",
+            "Çarşamba": "09:00–21:00",
+            "Perşembe": "09:00–21:00",
+            "Cuma": "09:00–21:00",
+            "Cumartesi": "09:00–21:00",
+            "Pazar": "09:00–21:00"
+        }
     },
     {
         "id": "7",
@@ -141,7 +201,17 @@
             "Premium"
         ],
         "lastActivity": "2025-01-09T13:10:00Z",
-        "status": "active"
+        "status": "active",
+        "hasWhatsApp": false,
+        "workingHours": {
+            "Pazartesi": "09:00–21:00",
+            "Salı": "09:00–21:00",
+            "Çarşamba": "09:00–21:00",
+            "Perşembe": "09:00–21:00",
+            "Cuma": "09:00–21:00",
+            "Cumartesi": "09:00–21:00",
+            "Pazar": "09:00–21:00"
+        }
     },
     {
         "id": "8",
@@ -162,6 +232,16 @@
             "Software"
         ],
         "lastActivity": "2025-01-08T15:00:00Z",
-        "status": "active"
+        "status": "active",
+        "hasWhatsApp": true,
+        "workingHours": {
+            "Pazartesi": "09:00–21:00",
+            "Salı": "09:00–21:00",
+            "Çarşamba": "09:00–21:00",
+            "Perşembe": "09:00–21:00",
+            "Cuma": "09:00–21:00",
+            "Cumartesi": "09:00–21:00",
+            "Pazar": "09:00–21:00"
+        }
     }
 ]

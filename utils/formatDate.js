@@ -33,3 +33,43 @@ export function formatDateReadable(dateString) {
     });
 }
 
+/**
+ * Formats a date string to show date and time
+ * Returns format: "Jan 15, 2024 at 10:30 AM"
+ */
+export function formatDateTime(dateString) {
+    if (!dateString) return '';
+
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+
+    const dateStr = date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+
+    const timeStr = date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+
+    return `${dateStr} at ${timeStr}`;
+}
+
+/**
+ * Formats a date string to show only time
+ * Returns format: "10:30 AM"
+ */
+export function formatTime(dateString) {
+    if (!dateString) return '';
+
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+
+    return date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}
+

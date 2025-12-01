@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Eye, Filter } from 'lucide-react';
+import { Eye, Filter, Plus } from 'lucide-react';
 import campaignsData from '../../data/campaigns.json';
 import { formatDate } from '../../utils/formatDate';
+import { Button } from '../ui/button';
 
 export default function CampaignsList() {
     const [campaigns] = useState(campaignsData);
@@ -42,7 +43,15 @@ export default function CampaignsList() {
 
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-3xl font-bold text-slate-800">Campaigns</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-slate-800">Campaigns</h1>
+                <Link href="/campaigns/new">
+                    <Button className="flex items-center gap-2">
+                        <Plus size={18} />
+                        <span>Campaign</span>
+                    </Button>
+                </Link>
+            </div>
 
             {/* Filters */}
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">

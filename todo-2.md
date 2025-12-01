@@ -1,1 +1,0 @@
-hobspot tasarımını uygula

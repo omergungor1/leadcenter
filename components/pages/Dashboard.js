@@ -197,7 +197,7 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                 {/* Today's Tasks */}
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex flex-col h-full">
+                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex flex-col h-100">
                     <div className="flex items-center justify-between mb-4 flex-shrink-0">
                         <h2 className="text-xl font-semibold text-slate-800">Today's Tasks</h2>
                         <Link
@@ -238,7 +238,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Latest Lead Groups */}
-                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex flex-col h-full">
+                <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex flex-col h-100">
                     <div className="flex items-center justify-between mb-4 flex-shrink-0">
                         <h2 className="text-xl font-semibold text-slate-800">Latest Lead Groups</h2>
                         <Link
