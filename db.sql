@@ -94,6 +94,12 @@ CREATE TABLE lead_groups (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id),
     name TEXT NOT NULL,
+    is_order BOOLEAN DEFAULT FALSE,
+    status TEXT CHECK (status IN ('pending','processing','completed','cancelled')) DEFAULT 'pending',
+    order_note TEXT,
+    lead_count INTEGER DEFAULT 0,
+    ordered_at TIMESTAMP,
+    completed_at TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -112,9 +118,10 @@ CREATE TABLE leads (
     district TEXT,
     plus_code TEXT,
     phone TEXT,
+    has_whatsapp BOOLEAN DEFAULT FALSE,
     website TEXT,
-    lat NUMERIC(9,6),
-    lng NUMERIC(9,6),
+    lat TEXT,
+    lng TEXT,
     rating NUMERIC(3,2),
     review_count INT,
     business_type TEXT,
@@ -122,6 +129,7 @@ CREATE TABLE leads (
     search_term TEXT,
     profile_image_url TEXT,
     working_hours JSONB,
+    is_favorite BOOLEAN NOT NULL DEFAULT FALSE,
     primary_group_id UUID REFERENCES lead_groups(id),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
@@ -154,6 +162,7 @@ CREATE TABLE lead_tags (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id),
     name TEXT NOT NULL,
+    color TEXT DEFAULT '#3B82F6',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -231,12 +240,12 @@ CREATE TABLE activities (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id),
     lead_id UUID REFERENCES leads(id),
-    activity_type TEXT CHECK (activity_type IN ('note','email','call','task','visit','meeting')) NOT NULL,
-    title TEXT,
+    activity_type TEXT CHECK (activity_type IN ('note','email','call','whatsapp','follow_up','visit','meeting','todo')) NOT NULL,
     content TEXT,
     status TEXT CHECK (status IN ('pending','completed')) DEFAULT 'pending',
     due_date TIMESTAMP,
     campaign_id UUID REFERENCES campaigns(id),
+    activity_reference_id UUID REFERENCES activities(id),
     created_at TIMESTAMP DEFAULT NOW(),
     completed_at TIMESTAMP
 );
@@ -245,34 +254,18 @@ CREATE INDEX idx_activities_user_id ON activities(user_id);
 CREATE INDEX idx_activities_lead_id ON activities(lead_id);
 CREATE INDEX idx_activities_campaign_id ON activities(campaign_id);
 
--- ========================
--- TASKS
--- ========================
-CREATE TABLE tasks (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES users(id),
-    activity_id UUID REFERENCES activities(id),
-    lead_id UUID REFERENCES leads(id),
-    task_type TEXT CHECK (task_type IN ('task','follow_up','visit','call')) NOT NULL,
-    status TEXT CHECK (status IN ('pending','completed')) DEFAULT 'pending',
-    due_date TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW(),
-    completed_at TIMESTAMP
-);
-
-CREATE INDEX idx_tasks_user_id ON tasks(user_id);
-CREATE INDEX idx_tasks_lead_id ON tasks(lead_id);
-CREATE INDEX idx_tasks_activity_id ON tasks(activity_id);
 
 -- ========================
 -- NOTIFICATIONS
 -- ========================
+--type: info , warning , error , success
 CREATE TABLE notifications (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id),
     type TEXT,
     message TEXT,
     is_read BOOLEAN DEFAULT FALSE,
+    is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -281,32 +274,11 @@ CREATE TABLE notifications (
 
 
 /*
+plans tablosu olmalıdır. 
 
-Supabase auth, supabase psql ve supa storage kullanacağız. Kullanıcı supabase ile oturum açacak. 
+credit_packages
 
-- plans tablosu olmalıdır. Şimdilik 4 Paketlerimiz var -> 
-| id | name     | monthly_credits | price  | is_active |
-| -- | -------- | --------------- | ------ | --------- |
-| 1  | Starter  | 5,000           | 4,000₺ | 1         |
-| 2  | Growth   | 10,000          | 5,000₺ | 1         |
-| 3  | Pro      | 20,000          | 6,000₺ | 1         |
-| 4  | Business | 50,000          | 9,000₺ | 1         |
-
-
-- credit_packages tablomuz olmalı:
-| id | name          | credits | price | is_active |
-| -- | ------------- | ------- | ----- | --------- |
-| 1  | +5.000 kredi  | 5000    | 2000  | 1         |
-| 2  | +10.000 kredi | 10000   | 3000  | 1         |
-| 3  | +50.000 kredi | 50000   | 7000  | 1         |
-
-
-- user_credit_transactions→ Kullanıcının kredilerinin eklenmesi veya kampanyalarda harcanmasını loglar ve toplam kredi bakiyesini takip eder.
-| id | user_id | type | credits | amount | source       | created_at |
-| -- | ------- | ---- | ------- | ------ | ------------ | ---------- |
-| 21 | 10      | add  | 5000    | 2000   | shopier      | 2025-01-01 |
-| 22 | 10      | use  | -1      | null   | campaign:123 | 2025-01-01 |
-| 23 | 10      | add  | 10000   | 3000   | shopier      | 2025-01-03 |
+user_credit_transactions 
 
 payments → Kullanıcının satın aldığı paket veya ek kredi ödemelerini, tutar, tarih ve ödeme durumu ile birlikte kaydeder.
 
@@ -317,7 +289,6 @@ campaign_groups → Kampanyaya bağlı lead grupları.
 campaign_leads → Kampanyaya tek tek eklenen leadler (individual).
 
 leads → Tüm lead bilgileri (isim, firma, adres, iletişim, primary_group_id ile ana gurubu tutulur
-### Mapten elde ettiğimiz dataşar şunlar. Bunları tabloda barındırabilmemiz gerekiyor: İşletme Adı, İl adı, İlçe adı, Tam Adres, Plus Code,Telefon,Web Sitesi,Lat,Lng,Puan,Yorum Sayısı,İşletme Türü,Google Maps URL,Arama Terimi,Resim URL,Çalışma Saatleri ### ).
 
 lead_groups → Leadleri gruplamak için (örn. İstanbul Kuaför Listesi).
 

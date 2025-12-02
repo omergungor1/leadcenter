@@ -1,26 +1,96 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageSquare, Phone, Mail, MapPin, Save, Plus, Edit2, Trash2, X } from 'lucide-react';
-import tagsData from '../../data/tags.json';
 import { formatDate } from '../../utils/formatDate';
+import { useAuth } from '@/lib/supabase/hooks';
+import { fetchAll, fetchById, insert, updateById, deleteById } from '@/lib/supabase/database';
+import { supabase } from '@/lib/supabase/client';
+import { toast } from 'sonner';
 
 export default function SettingsPage() {
+    const { user, loading: authLoading } = useAuth();
+    const [userId, setUserId] = useState(null);
     const [dailyLimits, setDailyLimits] = useState({
         whatsapp: 100,
-        call: 50,
-        email: 200,
-        visit: 20,
+        call: 30,
+        email: 100,
+        visit: 10,
     });
 
     const [isSaving, setIsSaving] = useState(false);
-    const [tags, setTags] = useState(tagsData);
+    const [isLoading, setIsLoading] = useState(true);
+    const [tags, setTags] = useState([]);
     const [showTagModal, setShowTagModal] = useState(false);
     const [editingTag, setEditingTag] = useState(null);
     const [tagForm, setTagForm] = useState({
         name: '',
         color: '#3B82F6',
     });
+
+    // Fetch user ID from users table
+    useEffect(() => {
+        const fetchUserId = async () => {
+            if (!user) return;
+
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('auth_id', user.id)
+                    .single();
+
+                if (error) {
+                    console.error('Error fetching user:', error);
+                    return;
+                }
+
+                if (data) {
+                    setUserId(data.id);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        };
+
+        fetchUserId();
+    }, [user]);
+
+    // Fetch daily limits and tags
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!userId) return;
+
+            setIsLoading(true);
+            try {
+                // Fetch user limits
+                const { data: userData, error: userError } = await fetchById('users', userId);
+                if (userData && !userError) {
+                    setDailyLimits({
+                        whatsapp: userData.whatsapp_limit || 100,
+                        call: userData.call_limit || 30,
+                        email: userData.mail_limit || 100,
+                        visit: userData.visit_limit || 10,
+                    });
+                }
+
+                // Fetch tags
+                const { data: tagsData, error: tagsError } = await fetchAll('lead_tags', '*', {
+                    user_id: userId,
+                    is_active: true,
+                });
+                if (tagsData && !tagsError) {
+                    setTags(tagsData);
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [userId]);
 
     const handleLimitChange = (type, value) => {
         const numValue = parseInt(value) || 0;
@@ -32,13 +102,33 @@ export default function SettingsPage() {
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        if (!userId) {
+            alert('User not found. Please try again.');
+            return;
+        }
+
         setIsSaving(true);
-        // Mock: Simulate API call
-        setTimeout(() => {
-            alert('Daily limits updated successfully! (Mock)');
+        try {
+            const { data, error } = await updateById('users', userId, {
+                whatsapp_limit: dailyLimits.whatsapp,
+                call_limit: dailyLimits.call,
+                mail_limit: dailyLimits.email,
+                visit_limit: dailyLimits.visit,
+                updated_at: new Date().toISOString(),
+            });
+
+            if (error) {
+                toast.error('Error updating daily limits: ' + error.message);
+            } else {
+                toast.success('Daily limits updated successfully!');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('An error occurred while saving. Please try again.');
+        } finally {
             setIsSaving(false);
-        }, 500);
+        }
     };
 
     const limitItems = [
@@ -93,7 +183,7 @@ export default function SettingsPage() {
             setEditingTag(tag);
             setTagForm({
                 name: tag.name,
-                color: tag.color,
+                color: tag.color || '#3B82F6',
             });
         } else {
             setEditingTag(null);
@@ -114,40 +204,91 @@ export default function SettingsPage() {
         });
     };
 
-    const handleSaveTag = () => {
+    const handleSaveTag = async () => {
         if (!tagForm.name.trim()) {
-            alert('Tag name is required');
+            toast.error('Tag name is required');
             return;
         }
 
-        if (editingTag) {
-            // Update existing tag
-            setTags(tags.map((tag) =>
-                tag.id === editingTag.id
-                    ? { ...tag, name: tagForm.name, color: tagForm.color }
-                    : tag
-            ));
-            alert('Tag updated successfully! (Mock)');
-        } else {
-            // Create new tag
-            const newTag = {
-                id: String(Date.now()),
-                name: tagForm.name,
-                color: tagForm.color,
-                createdDate: new Date().toISOString(),
-            };
-            setTags([...tags, newTag]);
-            alert('Tag created successfully! (Mock)');
+        if (!userId) {
+            toast.error('User not found. Please try again.');
+            return;
         }
-        handleCloseTagModal();
+
+        try {
+            if (editingTag) {
+                // Update existing tag
+                const { data, error } = await updateById('lead_tags', editingTag.id, {
+                    name: tagForm.name,
+                    color: tagForm.color,
+                    updated_at: new Date().toISOString(),
+                });
+
+                if (error) {
+                    toast.error('Error updating tag: ' + error.message);
+                    return;
+                }
+
+                setTags(tags.map((tag) =>
+                    tag.id === editingTag.id ? { ...tag, ...data } : tag
+                ));
+                toast.success('Tag updated successfully!');
+            } else {
+                // Create new tag
+                const { data, error } = await insert('lead_tags', {
+                    user_id: userId,
+                    name: tagForm.name,
+                    color: tagForm.color,
+                    is_active: true,
+                });
+
+                if (error) {
+                    toast.error('Error creating tag: ' + error.message);
+                    return;
+                }
+
+                setTags([...tags, data]);
+                toast.success('Tag created successfully!');
+            }
+            handleCloseTagModal();
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('An error occurred. Please try again.');
+        }
     };
 
-    const handleDeleteTag = (tagId) => {
-        if (confirm('Are you sure you want to delete this tag?')) {
+    const handleDeleteTag = async (tagId) => {
+        if (!confirm('Are you sure you want to delete this tag?')) {
+            return;
+        }
+
+        try {
+            // Soft delete by setting is_active to false
+            const { data, error } = await updateById('lead_tags', tagId, {
+                is_active: false,
+                updated_at: new Date().toISOString(),
+            });
+
+            if (error) {
+                toast.error('Error deleting tag: ' + error.message);
+                return;
+            }
+
             setTags(tags.filter((tag) => tag.id !== tagId));
-            alert('Tag deleted successfully! (Mock)');
+            toast.success('Tag deleted successfully!');
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('An error occurred. Please try again.');
         }
     };
+
+    if (authLoading || isLoading) {
+        return (
+            <div className="p-6 flex items-center justify-center h-full">
+                <div className="text-slate-500">Loading...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-6 space-y-6">
@@ -239,12 +380,12 @@ export default function SettingsPage() {
                                 <div className="flex items-center gap-3">
                                     <div
                                         className="w-8 h-8 rounded-lg"
-                                        style={{ backgroundColor: tag.color }}
+                                        style={{ backgroundColor: tag.color || '#3B82F6' }}
                                     />
                                     <div>
                                         <p className="font-semibold text-slate-800">{tag.name}</p>
                                         <p className="text-xs text-slate-400">
-                                            {formatDate(tag.createdDate)}
+                                            {formatDate(tag.created_at)}
                                         </p>
                                     </div>
                                 </div>
@@ -269,8 +410,8 @@ export default function SettingsPage() {
                                 <span
                                     className="px-3 py-1 rounded-lg text-xs font-medium"
                                     style={{
-                                        backgroundColor: `${tag.color}20`,
-                                        color: tag.color,
+                                        backgroundColor: `${tag.color || '#3B82F6'}20`,
+                                        color: tag.color || '#3B82F6',
                                     }}
                                 >
                                     {tag.name}

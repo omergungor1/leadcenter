@@ -1,10 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Eye, Download, Plus, ChevronDown, FileText, Contact } from 'lucide-react';
-import leadGroupsData from '../../data/leadGroups.json';
-import leadsData from '../../data/leads.json';
 import { formatDate } from '../../utils/formatDate';
 import { Button } from '../ui/button';
 import {
@@ -13,21 +11,115 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import { useAuth } from '@/lib/supabase/hooks';
+import { fetchAll } from '@/lib/supabase/database';
+import { supabase } from '@/lib/supabase/client';
+import CreateLeadGroupModal from '../modals/CreateLeadGroupModal';
+import { toast } from 'sonner';
 
 export default function LeadGroupsList() {
-    const [leadGroups] = useState(leadGroupsData);
+    const { user, loading: authLoading } = useAuth();
+    const [userId, setUserId] = useState(null);
+    const [leadGroups, setLeadGroups] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [showCreateModal, setShowCreateModal] = useState(false);
+
+    // Fetch user ID from users table
+    useEffect(() => {
+        const fetchUserId = async () => {
+            if (!user) return;
+
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('auth_id', user.id)
+                    .single();
+
+                if (error) {
+                    console.error('Error fetching user:', error);
+                    return;
+                }
+
+                if (data) {
+                    setUserId(data.id);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        };
+
+        fetchUserId();
+    }, [user]);
+
+    // Fetch lead groups
+    useEffect(() => {
+        const fetchLeadGroups = async () => {
+            if (!userId) return;
+
+            setIsLoading(true);
+            try {
+                const { data, error } = await fetchAll('lead_groups', '*', {
+                    user_id: userId,
+                    is_active: true,
+                });
+
+                if (error) {
+                    toast.error('Error loading lead groups: ' + error.message);
+                    return;
+                }
+
+                // Sort by created_at descending (newest first)
+                const sorted = (data || []).sort(
+                    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                );
+                setLeadGroups(sorted);
+            } catch (error) {
+                console.error('Error:', error);
+                toast.error('An error occurred while loading lead groups');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchLeadGroups();
+    }, [userId]);
+
+    const handleCreateSuccess = () => {
+        // Refresh the list
+        if (userId) {
+            fetchAll('lead_groups', '*', {
+                user_id: userId,
+                is_active: true,
+            }).then(({ data, error }) => {
+                if (!error && data) {
+                    const sorted = data.sort(
+                        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                    );
+                    setLeadGroups(sorted);
+                }
+            });
+        }
+    };
 
     const getStatusColor = (status) => {
-        switch (status) {
-            case 'Completed':
+        switch (status?.toLowerCase()) {
+            case 'completed':
                 return 'bg-green-100 text-green-700';
-            case 'Processing':
+            case 'processing':
                 return 'bg-blue-100 text-blue-700';
-            case 'Pending':
+            case 'pending':
                 return 'bg-orange-100 text-orange-700';
+            case 'cancelled':
+                return 'bg-red-100 text-red-700';
             default:
                 return 'bg-slate-100 text-slate-700';
         }
+    };
+
+    const formatStatus = (status) => {
+        if (!status) return 'Unknown';
+        return status.charAt(0).toUpperCase() + status.slice(1);
     };
 
     const handleExportCSV = (groupId) => {
@@ -40,11 +132,22 @@ export default function LeadGroupsList() {
         alert(`Exporting group ${groupId} to VCF... (Mock)`);
     };
 
+    if (authLoading || isLoading) {
+        return (
+            <div className="p-6 flex items-center justify-center h-full">
+                <div className="text-slate-500">Loading...</div>
+            </div>
+        );
+    }
+
     return (
         <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-slate-800">Lead Groups</h1>
-                <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium">
+                <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium"
+                >
                     <Plus size={18} />
                     <span>Create Lead Group</span>
                 </button>
@@ -89,14 +192,14 @@ export default function LeadGroupsList() {
                                                 group.status
                                             )}`}
                                         >
-                                            {group.status}
+                                            {formatStatus(group.status)}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                                        {group.leadCount}
+                                        {group.lead_count || 0}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                        {formatDate(group.dateCreated)}
+                                        {formatDate(group.created_at)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div className="flex items-center gap-3">
@@ -142,6 +245,15 @@ export default function LeadGroupsList() {
                     </table>
                 </div>
             </div>
+
+            {/* Create Lead Group Modal */}
+            {showCreateModal && userId && (
+                <CreateLeadGroupModal
+                    userId={userId}
+                    onClose={() => setShowCreateModal(false)}
+                    onSuccess={handleCreateSuccess}
+                />
+            )}
         </div>
     );
 }

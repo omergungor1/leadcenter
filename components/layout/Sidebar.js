@@ -13,7 +13,8 @@ import {
     Settings,
     UserCircle,
     Menu,
-    X
+    X,
+    Heart,
 } from 'lucide-react';
 
 const menuItems = [
@@ -22,6 +23,7 @@ const menuItems = [
     { icon: User, label: 'Leads', path: '/leads' },
     { icon: Megaphone, label: 'Campaigns', path: '/campaigns' },
     { icon: CheckSquare, label: 'Tasks', path: '/tasks' },
+    { icon: Heart, label: 'Favorites', path: '/favorites' },
 ];
 
 const bottomMenuItems = [
