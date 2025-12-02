@@ -15,6 +15,7 @@ import {
     Menu,
     X,
     Heart,
+    CreditCard,
 } from 'lucide-react';
 
 const menuItems = [
@@ -29,6 +30,7 @@ const menuItems = [
 const bottomMenuItems = [
     { icon: Settings, label: 'Settings', path: '/settings' },
     { icon: UserCircle, label: 'Profile', path: '/profile' },
+    { icon: CreditCard, label: 'Account', path: '/account' },
 ];
 
 export default function Sidebar() {

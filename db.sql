@@ -23,6 +23,7 @@ CREATE TABLE users (
     monthly_credits_used INT DEFAULT 0,
     subscription_start TIMESTAMP,
     subscription_end TIMESTAMP,
+    plan_id UUID REFERENCES plans(id),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
@@ -118,6 +119,7 @@ CREATE TABLE leads (
     district TEXT,
     plus_code TEXT,
     phone TEXT,
+    email TEXT,
     has_whatsapp BOOLEAN DEFAULT FALSE,
     website TEXT,
     lat TEXT,
@@ -195,6 +197,7 @@ CREATE TABLE campaigns (
     campaign_type TEXT CHECK (campaign_type IN ('whatsapp','mail','call','visit')) NOT NULL,
     start_date TIMESTAMP,
     end_date TIMESTAMP,
+    total_leads INTEGER DEFAULT 0,
     status TEXT CHECK (status IN ('draft','active','completed','cancelled')) DEFAULT 'draft',
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
