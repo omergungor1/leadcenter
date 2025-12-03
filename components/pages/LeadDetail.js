@@ -31,7 +31,7 @@ import { formatDate, formatDateTime, formatTime, formatTimeAgo } from '../../uti
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/supabase/hooks';
-import { fetchById, fetchAll, updateById } from '@/lib/supabase/database';
+import { fetchById, fetchAll, updateById, insert, deleteById } from '@/lib/supabase/database';
 import { supabase } from '@/lib/supabase/client';
 import { useEffect } from 'react';
 import QuickActionPanel from '../modals/QuickActionPanel';
@@ -47,11 +47,13 @@ export default function LeadDetail({ id }) {
     const [leadGroups, setLeadGroups] = useState([]);
     const [leadCampaigns, setLeadCampaigns] = useState([]);
     const [leadTags, setLeadTags] = useState([]);
+    const [allUserTags, setAllUserTags] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showImageModal, setShowImageModal] = useState(false);
     const [showAllWorkingHours, setShowAllWorkingHours] = useState(false);
     const [showQuickActionPanel, setShowQuickActionPanel] = useState(false);
     const [selectedActionType, setSelectedActionType] = useState(null);
+    const [showTagDropdown, setShowTagDropdown] = useState(false);
 
     // Get today's day name in Turkish
     const getTodayInTurkish = () => {
@@ -80,6 +82,72 @@ export default function LeadDetail({ id }) {
             // Update local state
             setLead({ ...lead, is_favorite: newFavoriteStatus });
             toast.success(newFavoriteStatus ? 'Added to favorites' : 'Removed from favorites');
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('An error occurred');
+        }
+    };
+
+    // Add tag to lead
+    const handleAddTag = async (tagId) => {
+        if (!lead || !userId) return;
+
+        try {
+            // Check if tag already exists
+            const existingTag = leadTags.find((t) => t.id === tagId);
+            if (existingTag) {
+                toast.info('Tag already added');
+                return;
+            }
+
+            // Insert into lead_tag_map
+            const { error } = await insert('lead_tag_map', {
+                user_id: userId,
+                lead_id: lead.id,
+                tag_id: tagId,
+            });
+
+            if (error) {
+                toast.error('Error adding tag: ' + error.message);
+                return;
+            }
+
+            // Find the tag and add to state
+            const tagToAdd = allUserTags.find((t) => t.id === tagId);
+            if (tagToAdd) {
+                setLeadTags([...leadTags, tagToAdd]);
+                toast.success('Tag added');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('An error occurred');
+        }
+    };
+
+    // Remove tag from lead
+    const handleRemoveTag = async (tagId) => {
+        if (!lead || !userId) return;
+
+        try {
+            // Find the tag map entry
+            const { data: tagMapData } = await fetchAll('lead_tag_map', '*', {
+                lead_id: lead.id,
+                tag_id: tagId,
+            });
+
+            if (tagMapData && tagMapData.length > 0) {
+                // Delete the tag map entry
+                const { error } = await deleteById('lead_tag_map', tagMapData[0].id);
+
+                if (error) {
+                    toast.error('Error removing tag: ' + error.message);
+                    return;
+                }
+
+                // Remove from state
+                setLeadTags(leadTags.filter((t) => t.id !== tagId));
+                toast.success('Tag removed');
+            }
         } catch (error) {
             console.error('Error:', error);
             toast.error('An error occurred');
@@ -128,16 +196,32 @@ export default function LeadDetail({ id }) {
                 }
                 setLead(leadData);
 
-                // Fetch lead groups (from lead_groups_map)
+                // Fetch lead groups (from primary_group_id and lead_groups_map)
+                const allGroupIds = [];
+
+                // Add primary_group_id if exists
+                if (leadData.primary_group_id) {
+                    allGroupIds.push(leadData.primary_group_id);
+                }
+
+                // Fetch groups from lead_groups_map
                 const { data: groupMapData } = await fetchAll('lead_groups_map', '*', {
                     lead_id: id,
                 });
                 if (groupMapData && groupMapData.length > 0) {
-                    const groupIds = groupMapData.map((gm) => gm.lead_group_id);
+                    const mapGroupIds = groupMapData.map((gm) => gm.lead_group_id);
+                    allGroupIds.push(...mapGroupIds);
+                }
+
+                // Fetch all unique groups
+                if (allGroupIds.length > 0) {
+                    const uniqueGroupIds = [...new Set(allGroupIds)];
                     const { data: groupsData } = await fetchAll('lead_groups', '*', {
-                        id: groupIds,
+                        id: uniqueGroupIds,
                     });
                     setLeadGroups(groupsData || []);
+                } else {
+                    setLeadGroups([]);
                 }
 
                 // Fetch activities
@@ -157,13 +241,26 @@ export default function LeadDetail({ id }) {
                 });
                 setLeadTasks(tasksData || []);
 
-                // Fetch campaigns (through lead_groups_map and campaign_groups)
+                // Fetch campaigns (through primary_group_id and lead_groups_map)
+                const allGroupIdsForCampaigns = [];
+
+                // Add primary_group_id if exists
+                if (leadData.primary_group_id) {
+                    allGroupIdsForCampaigns.push(leadData.primary_group_id);
+                }
+
+                // Add groups from lead_groups_map
                 if (groupMapData && groupMapData.length > 0) {
-                    const groupIds = groupMapData.map((gm) => gm.lead_group_id);
+                    const mapGroupIds = groupMapData.map((gm) => gm.lead_group_id);
+                    allGroupIdsForCampaigns.push(...mapGroupIds);
+                }
+
+                if (allGroupIdsForCampaigns.length > 0) {
+                    const uniqueGroupIds = [...new Set(allGroupIdsForCampaigns)];
 
                     // Get campaigns that use these groups
                     const { data: campaignGroupsData } = await fetchAll('campaign_groups', '*', {
-                        lead_group_id: groupIds, // fetchAll handles arrays with .in()
+                        lead_group_id: uniqueGroupIds, // fetchAll handles arrays with .in()
                     });
 
                     if (campaignGroupsData && campaignGroupsData.length > 0) {
@@ -175,8 +272,19 @@ export default function LeadDetail({ id }) {
                         });
 
                         setLeadCampaigns(campaignsData || []);
+                    } else {
+                        setLeadCampaigns([]);
                     }
+                } else {
+                    setLeadCampaigns([]);
                 }
+
+                // Fetch all user tags
+                const { data: allTagsData } = await fetchAll('lead_tags', '*', {
+                    user_id: userId,
+                    is_active: true,
+                });
+                setAllUserTags(allTagsData || []);
 
                 // Fetch tags (from lead_tag_map)
                 const { data: tagMapData } = await fetchAll('lead_tag_map', '*', {
@@ -188,6 +296,8 @@ export default function LeadDetail({ id }) {
                         id: tagIds, // fetchAll handles arrays with .in()
                     });
                     setLeadTags(tagsData || []);
+                } else {
+                    setLeadTags([]);
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -198,6 +308,27 @@ export default function LeadDetail({ id }) {
 
         fetchLeadData();
     }, [id, userId]);
+
+    // Close tag dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                showTagDropdown &&
+                !event.target.closest('[data-tag-dropdown]') &&
+                !event.target.closest('[data-tag-button]')
+            ) {
+                setShowTagDropdown(false);
+            }
+        };
+
+        if (showTagDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showTagDropdown]);
 
     if (!lead) {
         return (
@@ -250,10 +381,10 @@ export default function LeadDetail({ id }) {
     }
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="grid grid-cols-12 gap-6">
+        <div className="h-full flex flex-col overflow-hidden p-6">
+            <div className="flex-1 grid grid-cols-12 gap-6 overflow-hidden min-h-0">
                 {/* Left Column - Info Panel */}
-                <div className="col-span-12 lg:col-span-3 space-y-4">
+                <div className="col-span-12 lg:col-span-3 space-y-4 overflow-hidden">
                     {/* Company Info */}
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                         {/* Company Image */}
@@ -467,15 +598,15 @@ export default function LeadDetail({ id }) {
                 </div>
 
                 {/* Middle Column - Activity Timeline */}
-                <div className="col-span-12 lg:col-span-6 space-y-4">
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div className="col-span-12 lg:col-span-6 space-y-4 overflow-hidden flex flex-col min-h-0">
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
                         {/* Timeline Header */}
-                        <div className="px-6 py-4 border-b border-slate-200">
+                        <div className="px-6 py-4 border-b border-slate-200 flex-shrink-0">
                             <h3 className="text-lg font-semibold text-slate-800">Activity Timeline</h3>
                         </div>
 
-                        {/* Timeline Content */}
-                        <div className="p-6">
+                        {/* Timeline Content - Scrollable */}
+                        <div className="p-6 overflow-y-auto flex-1 min-h-0 scrollbar-modern">
                             <div className="relative">
                                 {leadActivities.length > 0 ? (
                                     <div className="relative">
@@ -569,7 +700,7 @@ export default function LeadDetail({ id }) {
                 </div>
 
                 {/* Right Column - Lead Groups, Campaigns, Tags */}
-                <div className="col-span-12 lg:col-span-3 space-y-4">
+                <div className="col-span-12 lg:col-span-3 space-y-4 overflow-hidden">
                     {/* Quick Actions */}
                     <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                         <h3 className="font-semibold text-slate-800 mb-4">Quick Actions</h3>
@@ -677,15 +808,25 @@ export default function LeadDetail({ id }) {
                         <p className="text-sm font-medium text-slate-700 mb-3">Belongs to Lead Groups</p>
                         <div className="space-y-2">
                             {leadGroups.length > 0 ? (
-                                leadGroups.map((group) => (
-                                    <Link
-                                        key={group.id}
-                                        href={`/lead-groups/${group.id}`}
-                                        className="block p-2 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors text-sm text-slate-800"
-                                    >
-                                        {group.name}
-                                    </Link>
-                                ))
+                                leadGroups.map((group) => {
+                                    const isPrimary = lead?.primary_group_id === group.id;
+                                    return (
+                                        <Link
+                                            key={group.id}
+                                            href={`/lead-groups/${group.id}`}
+                                            className="block p-2 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors text-sm text-slate-800 relative"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span>{group.name}</span>
+                                                {isPrimary && (
+                                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                                                        Primary
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </Link>
+                                    );
+                                })
                             ) : (
                                 <p className="text-sm text-slate-400">No groups assigned</p>
                             )}
@@ -752,20 +893,86 @@ export default function LeadDetail({ id }) {
 
                     {/* Tags */}
                     <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                        <p className="text-sm font-medium text-slate-700 mb-3">Tags</p>
+                        <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm font-medium text-slate-700">Tags</p>
+                            <div className="relative" data-tag-dropdown>
+                                <button
+                                    data-tag-button
+                                    onClick={() => setShowTagDropdown(!showTagDropdown)}
+                                    className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+                                    title="Add tag"
+                                >
+                                    <Plus size={16} className="text-slate-600" />
+                                </button>
+
+                                {/* Tag Dropdown */}
+                                {showTagDropdown && (
+                                    <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg border border-slate-200 z-20 max-h-60 overflow-y-auto scrollbar-modern">
+                                        <div className="p-2">
+                                            {allUserTags.length > 0 ? (
+                                                <div className="space-y-1">
+                                                    {allUserTags.map((tag) => {
+                                                        const isSelected = leadTags.some((t) => t.id === tag.id);
+                                                        return (
+                                                            <button
+                                                                key={tag.id}
+                                                                onClick={() => {
+                                                                    if (isSelected) {
+                                                                        handleRemoveTag(tag.id);
+                                                                    } else {
+                                                                        handleAddTag(tag.id);
+                                                                    }
+                                                                    setShowTagDropdown(false);
+                                                                }}
+                                                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${isSelected
+                                                                        ? 'bg-blue-50 hover:bg-blue-100'
+                                                                        : 'hover:bg-slate-50'
+                                                                    }`}
+                                                            >
+                                                                <div className="flex items-center gap-2">
+                                                                    <div
+                                                                        className="w-3 h-3 rounded-full"
+                                                                        style={{ backgroundColor: tag.color }}
+                                                                    />
+                                                                    <span className="text-slate-800">{tag.name}</span>
+                                                                </div>
+                                                                {isSelected && (
+                                                                    <CheckSquare size={16} className="text-blue-600" />
+                                                                )}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm text-slate-400 p-3 text-center">
+                                                    No tags available. Create tags in Settings.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                         <div className="flex flex-wrap gap-2">
                             {leadTags.length > 0 ? (
                                 leadTags.map((tag) => (
-                                    <span
+                                    <div
                                         key={tag.id}
-                                        className="px-2 py-1 rounded-lg text-xs font-medium"
+                                        className="group relative px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1"
                                         style={{
                                             backgroundColor: `${tag.color}20`,
                                             color: tag.color,
                                         }}
                                     >
-                                        {tag.name}
-                                    </span>
+                                        <span>{tag.name}</span>
+                                        <button
+                                            onClick={() => handleRemoveTag(tag.id)}
+                                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-black/10 rounded"
+                                            title="Remove tag"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </div>
                                 ))
                             ) : (
                                 <p className="text-sm text-slate-400">No tags assigned</p>

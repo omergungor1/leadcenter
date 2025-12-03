@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Bell, User, Plus, X, LogOut } from 'lucide-react';
+import { Search, Bell, User, Plus, X, LogOut, Loader2 } from 'lucide-react';
 import CreateModal from '../modals/CreateModal';
 import NotificationDropdown from '../notifications/NotificationDropdown';
 import { useAuth } from '@/lib/supabase/hooks';
@@ -19,7 +19,11 @@ export default function TopBar() {
     const [showNotifications, setShowNotifications] = useState(false);
     const [userId, setUserId] = useState(null);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showSearchDropdown, setShowSearchDropdown] = useState(false);
     const notificationRef = useRef(null);
+    const searchRef = useRef(null);
 
     const handleLogout = async () => {
         const { error } = await signOut();
@@ -106,6 +110,73 @@ export default function TopBar() {
         }
     }, [userId]);
 
+    // Search leads with debounce
+    const searchLeads = useCallback(
+        async (query) => {
+            if (!query.trim() || !userId) {
+                setSearchResults([]);
+                setShowSearchDropdown(false);
+                return;
+            }
+
+            setIsSearching(true);
+            setShowSearchDropdown(true);
+            try {
+                const { data, error } = await supabase
+                    .from('leads')
+                    .select('id, company, name, city, district, email, phone, business_type')
+                    .eq('user_id', userId)
+                    .eq('is_active', true)
+                    .or(
+                        `company.ilike.%${query}%,name.ilike.%${query}%,city.ilike.%${query}%,district.ilike.%${query}%,business_type.ilike.%${query}%`
+                    )
+                    .limit(10);
+
+                if (error) {
+                    console.error('Error searching leads:', error);
+                    return;
+                }
+
+                setSearchResults(data || []);
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                setIsSearching(false);
+            }
+        },
+        [userId]
+    );
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            searchLeads(searchQuery);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery, searchLeads]);
+
+    // Close search dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                searchRef.current &&
+                !searchRef.current.contains(event.target) &&
+                !event.target.closest('[data-search-input]')
+            ) {
+                setShowSearchDropdown(false);
+            }
+        };
+
+        if (showSearchDropdown) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showSearchDropdown]);
+
     // Close notifications when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -127,6 +198,12 @@ export default function TopBar() {
         };
     }, [showNotifications]);
 
+    const handleLeadClick = (leadId) => {
+        router.push(`/leads/${leadId}`);
+        setShowSearchDropdown(false);
+        setSearchQuery('');
+    };
+
     const getUserInitials = () => {
         if (user?.email) {
             return user.email.substring(0, 2).toUpperCase();
@@ -139,15 +216,58 @@ export default function TopBar() {
             <div className="sticky top-0 z-30 bg-white border-b border-slate-200 px-6 py-4">
                 <div className="flex items-center justify-between gap-4">
                     {/* Search Bar */}
-                    <div className="flex-1 max-w-md relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+                    <div className="flex-1 max-w-md relative" ref={searchRef}>
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 z-10" size={20} />
                         <input
+                            data-search-input
                             type="text"
-                            placeholder="Search leads, groups, campaigns..."
+                            placeholder="Search leads..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => {
+                                if (searchQuery && searchResults.length > 0) {
+                                    setShowSearchDropdown(true);
+                                }
+                            }}
                             className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50"
                         />
+
+                        {/* Search Results Dropdown */}
+                        {showSearchDropdown && searchQuery && (
+                            <div className="absolute left-0 right-0 top-full mt-2 max-h-60 overflow-y-auto border border-slate-200 rounded-xl bg-white shadow-lg z-50">
+                                {isSearching ? (
+                                    <div className="p-4 text-center text-slate-500">
+                                        <Loader2 size={16} className="animate-spin mx-auto mb-2" />
+                                        <span className="text-sm">Searching...</span>
+                                    </div>
+                                ) : searchResults.length > 0 ? (
+                                    <div className="divide-y divide-slate-200">
+                                        {searchResults.map((lead) => (
+                                            <div
+                                                key={lead.id}
+                                                onClick={() => handleLeadClick(lead.id)}
+                                                className="p-3 hover:bg-slate-50 cursor-pointer transition-colors"
+                                            >
+                                                <div className="flex-1">
+                                                    <p className="font-medium text-slate-800 text-sm">
+                                                        {lead.company || lead.name || 'Unknown'}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500">
+                                                        {lead.business_type ? `${lead.business_type} - ` : ''}
+                                                        {lead.city || '-'}
+                                                        {lead.district ? ` / ${lead.district}` : ''}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="p-4 text-center text-slate-500 text-sm">
+                                        No leads found
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Right Side Actions */}

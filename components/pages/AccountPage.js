@@ -229,7 +229,7 @@ export default function AccountPage() {
                             return (
                                 <div
                                     key={plan.id}
-                                    className={`relative p-6 rounded-xl border-2 transition-all ₺{isCurrentPlan
+                                    className={`relative p-6 rounded-xl border-2 transition-all ${isCurrentPlan
                                         ? 'border-blue-500 bg-blue-50'
                                         : 'border-slate-200 hover:border-blue-300 hover:shadow-md'
                                         }`}
@@ -262,7 +262,7 @@ export default function AccountPage() {
                                         </div>
                                     </div>
                                     <button
-                                        className={`w-full py-2.5 rounded-xl font-medium transition-colors ₺{isCurrentPlan
+                                        className={`w-full py-2.5 rounded-xl font-medium transition-colors ${isCurrentPlan
                                             ? 'bg-blue-500 text-white cursor-default'
                                             : 'bg-blue-500 text-white hover:bg-blue-600'
                                             }`}

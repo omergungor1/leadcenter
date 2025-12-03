@@ -130,3 +130,37 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Modern Scrollbar Styles */
+@layer utilities {
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  .scrollbar-modern::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-thumb {
+    background: rgb(203, 213, 225); /* slate-300 */
+    border-radius: 10px;
+    transition: background 0.2s ease;
+  }
+
+  .scrollbar-modern::-webkit-scrollbar-thumb:hover {
+    background: rgb(148, 163, 184); /* slate-400 */
+  }
+
+  /* Firefox */
+  .scrollbar-modern {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(203, 213, 225) transparent;
+  }
+
+  .scrollbar-modern:hover {
+    scrollbar-color: rgb(148, 163, 184) transparent;
+  }
+}
