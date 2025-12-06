@@ -119,8 +119,6 @@ CREATE TABLE leads (
     district TEXT,
     plus_code TEXT,
     phone TEXT,
-    email TEXT,
-    has_whatsapp BOOLEAN DEFAULT FALSE,
     website TEXT,
     lat TEXT,
     lng TEXT,
@@ -132,6 +130,10 @@ CREATE TABLE leads (
     profile_image_url TEXT,
     working_hours JSONB,
     is_favorite BOOLEAN NOT NULL DEFAULT FALSE,
+    is_enriched BOOLEAN DEFAULT FALSE,
+    enriched_at TIMESTAMP,
+    enrichment_status TEXT,
+    enrichment_error TEXT,
     primary_group_id UUID REFERENCES lead_groups(id),
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
@@ -245,8 +247,10 @@ CREATE TABLE activities (
     lead_id UUID REFERENCES leads(id),
     activity_type TEXT CHECK (activity_type IN ('note','email','call','whatsapp','follow_up','visit','meeting','todo')) NOT NULL,
     content TEXT,
-    status TEXT CHECK (status IN ('pending','completed')) DEFAULT 'pending',
+    status TEXT CHECK (status IN ('pending','completed','cancelled')) DEFAULT 'pending',
     due_date TIMESTAMP,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP NULL,
     campaign_id UUID REFERENCES campaigns(id),
     activity_reference_id UUID REFERENCES activities(id),
     created_at TIMESTAMP DEFAULT NOW(),
@@ -271,6 +275,32 @@ CREATE TABLE notifications (
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+
+
+CREATE TABLE lead_phones (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
+    phone TEXT NOT NULL,
+    has_whatsapp BOOLEAN DEFAULT FALSE,
+    source TEXT, -- örn: 'website', 'map', 'manual'
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_lead_phones_lead_id ON lead_phones (lead_id);
+CREATE INDEX idx_lead_phones_phone ON lead_phones (phone);
+
+
+CREATE TABLE lead_emails (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    source TEXT, -- 'website', 'contact_page', 'header', 'footer', vs.
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_lead_emails_lead_id ON lead_emails (lead_id);
+CREATE INDEX idx_lead_emails_email ON lead_emails (email);
 
 
 

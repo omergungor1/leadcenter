@@ -23,6 +23,9 @@ import {
     Star,
     Heart,
     Hourglass,
+    EllipsisVertical,
+    CheckCircle,
+    Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -48,12 +51,17 @@ export default function LeadDetail({ id }) {
     const [leadCampaigns, setLeadCampaigns] = useState([]);
     const [leadTags, setLeadTags] = useState([]);
     const [allUserTags, setAllUserTags] = useState([]);
+    const [leadPhones, setLeadPhones] = useState([]);
+    const [leadEmails, setLeadEmails] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showImageModal, setShowImageModal] = useState(false);
     const [showAllWorkingHours, setShowAllWorkingHours] = useState(false);
     const [showQuickActionPanel, setShowQuickActionPanel] = useState(false);
     const [selectedActionType, setSelectedActionType] = useState(null);
     const [showTagDropdown, setShowTagDropdown] = useState(false);
+    const [editingActivity, setEditingActivity] = useState(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmAction, setConfirmAction] = useState(null);
 
     // Get today's day name in Turkish
     const getTodayInTurkish = () => {
@@ -224,9 +232,10 @@ export default function LeadDetail({ id }) {
                     setLeadGroups([]);
                 }
 
-                // Fetch activities
+                // Fetch activities (only non-deleted)
                 const { data: activitiesData } = await fetchAll('activities', '*', {
                     lead_id: id,
+                    is_deleted: false,
                 });
                 if (activitiesData) {
                     const sorted = activitiesData.sort(
@@ -299,6 +308,26 @@ export default function LeadDetail({ id }) {
                 } else {
                     setLeadTags([]);
                 }
+
+                // Fetch lead phones
+                const { data: phonesData, error: phonesError } = await fetchAll('lead_phones', '*', {
+                    lead_id: id,
+                });
+                if (phonesError) {
+                    console.error('Error fetching lead phones:', phonesError);
+                } else {
+                    setLeadPhones(phonesData || []);
+                }
+
+                // Fetch lead emails
+                const { data: emailsData, error: emailsError } = await fetchAll('lead_emails', '*', {
+                    lead_id: id,
+                });
+                if (emailsError) {
+                    console.error('Error fetching lead emails:', emailsError);
+                } else {
+                    setLeadEmails(emailsData || []);
+                }
             } catch (error) {
                 console.error('Error:', error);
             } finally {
@@ -329,6 +358,121 @@ export default function LeadDetail({ id }) {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [showTagDropdown]);
+
+    // Handle activity update
+    const handleUpdateActivity = async (activityId, updates) => {
+        if (!userId) return;
+
+        try {
+            const { error } = await updateById('activities', activityId, updates);
+
+            if (error) {
+                toast.error('Error updating activity: ' + error.message);
+                return;
+            }
+
+            // Refresh activities
+            const { data: activitiesData } = await fetchAll('activities', '*', {
+                lead_id: id,
+                is_deleted: false,
+            });
+            if (activitiesData) {
+                const sorted = activitiesData.sort(
+                    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                );
+                setLeadActivities(sorted);
+            }
+
+            setEditingActivity(null);
+            toast.success('Activity updated successfully');
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('An error occurred');
+        }
+    };
+
+    // Handle activity delete (soft delete)
+    const handleDeleteActivity = async (activityId) => {
+        if (!userId) return;
+
+        try {
+            const { error } = await updateById('activities', activityId, {
+                is_deleted: true,
+                deleted_at: new Date().toISOString(),
+            });
+
+            if (error) {
+                toast.error('Error deleting activity: ' + error.message);
+                return;
+            }
+
+            // Refresh activities
+            const { data: activitiesData } = await fetchAll('activities', '*', {
+                lead_id: id,
+                is_deleted: false,
+            });
+            if (activitiesData) {
+                const sorted = activitiesData.sort(
+                    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                );
+                setLeadActivities(sorted);
+            }
+
+            setShowConfirmModal(false);
+            setConfirmAction(null);
+            toast.success('Activity deleted successfully');
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('An error occurred');
+        }
+    };
+
+    // Handle mark as completed
+    const handleMarkCompleted = async (activityId) => {
+        if (!userId) return;
+
+        try {
+            const { error } = await updateById('activities', activityId, {
+                status: 'completed',
+                completed_at: new Date().toISOString(),
+            });
+
+            if (error) {
+                toast.error('Error updating activity: ' + error.message);
+                return;
+            }
+
+            // Refresh activities
+            const { data: activitiesData } = await fetchAll('activities', '*', {
+                lead_id: id,
+                is_deleted: false,
+            });
+            if (activitiesData) {
+                const sorted = activitiesData.sort(
+                    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                );
+                setLeadActivities(sorted);
+            }
+
+            setShowConfirmModal(false);
+            setConfirmAction(null);
+            toast.success('Activity marked as completed');
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('An error occurred');
+        }
+    };
+
+    // Handle confirm action
+    const handleConfirmAction = () => {
+        if (!confirmAction) return;
+
+        if (confirmAction.type === 'delete') {
+            handleDeleteActivity(confirmAction.activityId);
+        } else if (confirmAction.type === 'complete') {
+            handleMarkCompleted(confirmAction.activityId);
+        }
+    };
 
     if (!lead) {
         return (
@@ -482,41 +626,66 @@ export default function LeadDetail({ id }) {
                                     </div>
                                 )}
 
-                                {lead.phone && (
+                                {leadPhones.length > 0 && (
                                     <div className="flex items-start gap-3">
                                         <Phone size={18} className="text-slate-400 mt-1" />
-                                        <div className="flex-1">
-                                            <p className="text-sm text-slate-500">Phone</p>
-                                            <div className="flex items-center gap-2">
-                                                <p className="text-slate-800">{formatPhoneNumber(lead.phone)}</p>
-                                                {lead.has_whatsapp && (
-                                                    <a
-                                                        href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="relative group"
-                                                        title="WhatsApp ile mesaj gönder"
-                                                    >
-                                                        <Image
-                                                            src="/wp-icon.png"
-                                                            alt="WhatsApp"
-                                                            width={20}
-                                                            height={20}
-                                                            className="rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                        <div className="flex-1 space-y-2">
+                                            <p className="text-sm text-slate-500">Phone{leadPhones.length > 1 ? 's' : ''}</p>
+                                            {leadPhones.map((phoneItem) => (
+                                                <div key={phoneItem.id} className="flex items-center gap-2 flex-wrap">
+                                                    <p className="text-slate-800">{formatPhoneNumber(phoneItem.phone)}</p>
+                                                    {phoneItem.source === 'map' && (
+                                                        <Map
+                                                            size={16}
+                                                            className="text-blue-500"
+                                                            title="Haritadan alındı"
                                                         />
-                                                    </a>
-                                                )}
-                                            </div>
+                                                    )}
+                                                    {phoneItem.has_whatsapp && (
+                                                        <div className="flex items-center gap-1">
+                                                            <a
+                                                                href={`https://wa.me/${phoneItem.phone.replace(/\D/g, '')}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="relative group"
+                                                                title="WhatsApp ile mesaj gönder"
+                                                            >
+                                                                <Image
+                                                                    src="/wp-icon.png"
+                                                                    alt="WhatsApp"
+                                                                    width={20}
+                                                                    height={20}
+                                                                    className="rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                                                />
+                                                            </a>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedActionType('whatsapp');
+                                                                    setShowQuickActionPanel(true);
+                                                                }}
+                                                                className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                                                                title="Yeni WhatsApp mesajı"
+                                                            >
+                                                                Mesaj
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
 
-                                {lead.email && (
+                                {leadEmails.length > 0 && (
                                     <div className="flex items-start gap-3">
                                         <Mail size={18} className="text-slate-400 mt-1" />
-                                        <div>
-                                            <p className="text-sm text-slate-500">Email</p>
-                                            <p className="text-slate-800">{lead.email}</p>
+                                        <div className="flex-1 space-y-2">
+                                            <p className="text-sm text-slate-500">Email{leadEmails.length > 1 ? 's' : ''}</p>
+                                            {leadEmails.map((emailItem) => (
+                                                <p key={emailItem.id} className="text-slate-800">
+                                                    {emailItem.email}
+                                                </p>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
@@ -651,34 +820,44 @@ export default function LeadDetail({ id }) {
                                                         </div>
 
                                                         {/* Message Bubble */}
-                                                        <div className="flex-1 min-w-0">
+                                                        <div className="flex-1 min-w-0 group">
                                                             <div className={`rounded-xl p-4 border shadow-sm ${activity.status === 'pending'
                                                                 ? 'bg-amber-50 border-amber-200'
                                                                 : 'bg-slate-50 border-slate-200'
                                                                 }`}>
                                                                 <div className="flex items-start justify-between gap-2 mb-3">
                                                                     <p className="text-sm text-slate-700 flex-1">{activity.content || ''}</p>
-                                                                    {activity.status === 'pending' && (
-                                                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-100 rounded-lg flex-shrink-0">
-                                                                            <Hourglass size={14} className="text-amber-600 animate-pulse" />
-                                                                            <span className="text-xs font-medium text-amber-700">Pending</span>
-                                                                        </div>
-                                                                    )}
+                                                                    {/* Edit button - visible on hover for all activities */}
+                                                                    <button
+                                                                        onClick={() => setEditingActivity(activity)}
+                                                                        className="p-0.5 hover:bg-slate-100 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                                                        title="Edit activity"
+                                                                    >
+                                                                        <Edit size={18} className="text-slate-600" />
+                                                                    </button>
                                                                 </div>
 
                                                                 {/* Date/Time at bottom right */}
                                                                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200">
-                                                                    {/* Due date for pending activities */}
-                                                                    {activity.status === 'pending' && activity.due_date && (
-                                                                        <div className="px-2 py-1 bg-blue-50 rounded-lg border border-blue-100">
-                                                                            <div className="flex items-center gap-1.5">
-                                                                                <Calendar size={12} className="text-blue-600" />
-                                                                                <span className="text-xs font-medium text-blue-700">
-                                                                                    Due: {formatDate(activity.due_date)} {formatTime(activity.due_date)}
-                                                                                </span>
+                                                                    <div className='flex items-center gap-2'>
+                                                                        {/* Due date for pending activities */}
+                                                                        {activity.status === 'pending' && (
+                                                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-100 rounded-lg flex-shrink-0">
+                                                                                <Hourglass size={14} className="text-amber-600 animate-pulse" />
+                                                                                <span className="text-xs font-medium text-amber-700">Pending</span>
                                                                             </div>
-                                                                        </div>
-                                                                    )}
+                                                                        )}
+                                                                        {activity.status === 'pending' && activity.due_date && (
+                                                                            <div className="px-2 py-1 bg-blue-50 rounded-lg border border-blue-100">
+                                                                                <div className="flex items-center gap-1.5">
+                                                                                    <Calendar size={12} className="text-blue-600" />
+                                                                                    <span className="text-xs font-medium text-blue-700">
+                                                                                        Due: {formatDate(activity.due_date)} {formatTime(activity.due_date)}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                     {/* Created at */}
                                                                     <span className="text-xs text-slate-400">
                                                                         {formatTimeAgo(activity.created_at)}
@@ -704,7 +883,7 @@ export default function LeadDetail({ id }) {
                     {/* Quick Actions */}
                     <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                         <h3 className="font-semibold text-slate-800 mb-4">Quick Actions</h3>
-                        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             <button
                                 onClick={() => {
                                     setSelectedActionType('note');
@@ -925,8 +1104,8 @@ export default function LeadDetail({ id }) {
                                                                     setShowTagDropdown(false);
                                                                 }}
                                                                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${isSelected
-                                                                        ? 'bg-blue-50 hover:bg-blue-100'
-                                                                        : 'hover:bg-slate-50'
+                                                                    ? 'bg-blue-50 hover:bg-blue-100'
+                                                                    : 'hover:bg-slate-50'
                                                                     }`}
                                                             >
                                                                 <div className="flex items-center gap-2">
@@ -998,6 +1177,7 @@ export default function LeadDetail({ id }) {
                             try {
                                 const { data: activitiesData } = await fetchAll('activities', '*', {
                                     lead_id: lead.id,
+                                    is_deleted: false,
                                 });
                                 if (activitiesData) {
                                     const sorted = activitiesData.sort(
@@ -1012,6 +1192,138 @@ export default function LeadDetail({ id }) {
                         fetchActivities();
                     }}
                 />
+            )}
+
+            {/* Activity Edit Modal */}
+            {editingActivity && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                    onClick={() => setEditingActivity(null)}
+                >
+                    <div
+                        className="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-semibold text-slate-800">Edit Activity</h3>
+                            <button
+                                onClick={() => setEditingActivity(null)}
+                                className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    Content
+                                </label>
+                                <textarea
+                                    value={editingActivity.content || ''}
+                                    onChange={(e) =>
+                                        setEditingActivity({ ...editingActivity, content: e.target.value })
+                                    }
+                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    rows={4}
+                                    placeholder="Activity content..."
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
+                                <button
+                                    onClick={() => {
+                                        handleUpdateActivity(editingActivity.id, {
+                                            content: editingActivity.content,
+                                        });
+                                    }}
+                                    className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                                >
+                                    <Edit size={16} />
+                                    Save Changes
+                                </button>
+                                {editingActivity.status === 'pending' && (
+                                    <button
+                                        onClick={() => {
+                                            setConfirmAction({
+                                                type: 'complete',
+                                                activityId: editingActivity.id,
+                                            });
+                                            setShowConfirmModal(true);
+                                            setEditingActivity(null);
+                                        }}
+                                        className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-medium shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                                    >
+                                        <CheckCircle size={16} />
+                                        Complete
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => {
+                                        setConfirmAction({
+                                            type: 'delete',
+                                            activityId: editingActivity.id,
+                                        });
+                                        setShowConfirmModal(true);
+                                        setEditingActivity(null);
+                                    }}
+                                    className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all font-medium shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+                                >
+                                    <Trash2 size={16} />
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Confirm Modal */}
+            {showConfirmModal && confirmAction && (
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                    onClick={() => {
+                        setShowConfirmModal(false);
+                        setConfirmAction(null);
+                    }}
+                >
+                    <div
+                        className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="mb-6">
+                            <h3 className="text-xl font-semibold text-slate-800 mb-2">
+                                {confirmAction.type === 'delete' ? 'Delete Activity' : 'Mark as Completed'}
+                            </h3>
+                            <p className="text-slate-600">
+                                {confirmAction.type === 'delete'
+                                    ? 'Are you sure you want to delete this activity? This action cannot be undone.'
+                                    : 'Are you sure you want to mark this activity as completed?'}
+                            </p>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowConfirmModal(false);
+                                    setConfirmAction(null);
+                                }}
+                                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmAction}
+                                className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors font-medium ${confirmAction.type === 'delete'
+                                    ? 'bg-red-600 hover:bg-red-700'
+                                    : 'bg-green-600 hover:bg-green-700'
+                                    }`}
+                            >
+                                {confirmAction.type === 'delete' ? 'Delete' : 'Mark as Completed'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Image Modal */}

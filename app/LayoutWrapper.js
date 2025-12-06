@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from "../components/layout/Sidebar";
 import TopBar from "../components/layout/TopBar";
@@ -7,6 +8,7 @@ import TopBar from "../components/layout/TopBar";
 export default function LayoutWrapper({ children }) {
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     // Don't show sidebar and topbar on login page
     if (isLoginPage) {
@@ -16,8 +18,8 @@ export default function LayoutWrapper({ children }) {
     // Show sidebar and topbar for all other pages
     return (
         <div className="flex h-screen">
-            <Sidebar />
-            <div className="flex-1 flex flex-col ml-20 lg:ml-64">
+            <Sidebar onCollapseChange={setIsSidebarCollapsed} />
+            <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarCollapsed ? 'ml-20' : 'ml-20 lg:ml-64'}`}>
                 <TopBar />
                 <main className="flex-1 overflow-y-auto">
                     {children}

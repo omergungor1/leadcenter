@@ -1,12 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Download, ArrowLeft, ChevronDown, FileText, Contact } from 'lucide-react';
 import Link from 'next/link';
-import leadGroupsData from '../../data/leadGroups.json';
-import leadsData from '../../data/leads.json';
-import activitiesData from '../../data/activities.json';
 import { formatDate } from '../../utils/formatDate';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 import { Button } from '../ui/button';
@@ -16,15 +13,153 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import { useAuth } from '@/lib/supabase/hooks';
+import { fetchById, fetchAll } from '@/lib/supabase/database';
+import { supabase } from '@/lib/supabase/client';
+import { toast } from 'sonner';
 
 export default function LeadGroupDetail({ id }) {
     const router = useRouter();
+    const { user, loading: authLoading } = useAuth();
+    const [userId, setUserId] = useState(null);
     const [activeTab, setActiveTab] = useState('leads');
-    const group = leadGroupsData.find((g) => g.id === id);
-    const groupLeads = leadsData.filter((lead) => lead.leadGroupIds?.includes(id));
-    const groupActivities = activitiesData.filter((activity) =>
-        groupLeads.some((lead) => lead.id === activity.leadId)
-    );
+    const [group, setGroup] = useState(null);
+    const [groupLeads, setGroupLeads] = useState([]);
+    const [groupActivities, setGroupActivities] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Fetch user ID
+    useEffect(() => {
+        const fetchUserId = async () => {
+            if (!user) return;
+
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('auth_id', user.id)
+                    .single();
+
+                if (error) {
+                    console.error('Error fetching user:', error);
+                    return;
+                }
+
+                if (data) {
+                    setUserId(data.id);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        };
+
+        fetchUserId();
+    }, [user]);
+
+    // Fetch group data and leads
+    useEffect(() => {
+        const fetchGroupData = async () => {
+            if (!id || !userId) return;
+
+            setIsLoading(true);
+            try {
+                // Fetch group
+                const { data: groupData, error: groupError } = await fetchById('lead_groups', id);
+                if (groupError || !groupData) {
+                    toast.error('Lead group not found');
+                    return;
+                }
+                setGroup(groupData);
+
+                // Fetch leads from lead_groups_map
+                const { data: groupMapData, error: groupMapError } = await fetchAll('lead_groups_map', '*', {
+                    lead_group_id: id,
+                });
+
+                if (groupMapError) {
+                    console.error('Error fetching lead groups map:', groupMapError);
+                }
+
+                // Also fetch leads with primary_group_id
+                const { data: primaryLeadsData, error: primaryLeadsError } = await fetchAll('leads', '*', {
+                    primary_group_id: id,
+                    user_id: userId,
+                    is_active: true,
+                });
+
+                if (primaryLeadsError) {
+                    console.error('Error fetching primary leads:', primaryLeadsError);
+                }
+
+                // Combine lead IDs from both sources
+                const allLeadIds = [];
+
+                if (groupMapData && groupMapData.length > 0) {
+                    const mapLeadIds = groupMapData.map((gm) => gm.lead_id);
+                    allLeadIds.push(...mapLeadIds);
+                }
+
+                if (primaryLeadsData && primaryLeadsData.length > 0) {
+                    const primaryLeadIds = primaryLeadsData.map((lead) => lead.id);
+                    allLeadIds.push(...primaryLeadIds);
+                }
+
+                // Fetch all unique leads
+                if (allLeadIds.length > 0) {
+                    const uniqueLeadIds = [...new Set(allLeadIds)];
+                    const { data: leadsData, error: leadsError } = await fetchAll('leads', '*', {
+                        id: uniqueLeadIds,
+                        user_id: userId,
+                        is_active: true,
+                    });
+
+                    if (leadsError) {
+                        console.error('Error fetching leads:', leadsError);
+                    } else {
+                        setGroupLeads(leadsData || []);
+                    }
+                } else {
+                    setGroupLeads([]);
+                }
+
+                // Fetch activities for all leads in the group
+                if (allLeadIds.length > 0) {
+                    const uniqueLeadIds = [...new Set(allLeadIds)];
+                    const { data: activitiesData, error: activitiesError } = await fetchAll('activities', '*', {
+                        lead_id: uniqueLeadIds,
+                        user_id: userId,
+                    });
+
+                    if (activitiesError) {
+                        console.error('Error fetching activities:', activitiesError);
+                    } else {
+                        // Sort activities by created_at descending
+                        const sorted = (activitiesData || []).sort(
+                            (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                        );
+                        setGroupActivities(sorted);
+                    }
+                } else {
+                    setGroupActivities([]);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                toast.error('An error occurred while loading data');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchGroupData();
+    }, [id, userId]);
+
+    if (isLoading) {
+        return (
+            <div className="p-6">
+                <p className="text-slate-500">Loading...</p>
+            </div>
+        );
+    }
 
     if (!group) {
         return (
@@ -35,13 +170,15 @@ export default function LeadGroupDetail({ id }) {
     }
 
     const getStatusColor = (status) => {
-        switch (status) {
-            case 'Completed':
+        switch (status?.toLowerCase()) {
+            case 'completed':
                 return 'bg-green-100 text-green-700';
-            case 'Processing':
+            case 'processing':
                 return 'bg-blue-100 text-blue-700';
-            case 'Pending':
+            case 'pending':
                 return 'bg-orange-100 text-orange-700';
+            case 'cancelled':
+                return 'bg-red-100 text-red-700';
             default:
                 return 'bg-slate-100 text-slate-700';
         }
@@ -74,9 +211,9 @@ export default function LeadGroupDetail({ id }) {
                                 group.status
                             )}`}
                         >
-                            {group.status}
+                            {group.status ? group.status.charAt(0).toUpperCase() + group.status.slice(1) : 'Pending'}
                         </span>
-                        <span className="text-slate-600">{group.leadCount} leads</span>
+                        <span className="text-slate-600">{groupLeads.length} leads</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -151,29 +288,39 @@ export default function LeadGroupDetail({ id }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200">
-                                {groupLeads.map((lead) => (
-                                    <tr key={lead.id} className="hover:bg-slate-50">
-                                        <td className="px-6 py-4">
-                                            <Link
-                                                href={`/leads/${lead.id}`}
-                                                className="font-medium text-slate-800 hover:text-blue-600"
-                                            >
-                                                {lead.companyName}
-                                            </Link>
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-600">{lead.category}</td>
-                                        <td className="px-6 py-4 text-slate-600">{formatPhoneNumber(lead.phone)}</td>
-                                        <td className="px-6 py-4 text-slate-600">{lead.email}</td>
-                                        <td className="px-6 py-4">
-                                            <Link
-                                                href={`/leads/${lead.id}`}
-                                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                                            >
-                                                View
-                                            </Link>
+                                {groupLeads.length > 0 ? (
+                                    groupLeads.map((lead) => (
+                                        <tr key={lead.id} className="hover:bg-slate-50">
+                                            <td className="px-6 py-4">
+                                                <Link
+                                                    href={`/leads/${lead.id}`}
+                                                    className="font-medium text-slate-800 hover:text-blue-600"
+                                                >
+                                                    {lead.company || lead.name || 'N/A'}
+                                                </Link>
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-600">{lead.business_type || '-'}</td>
+                                            <td className="px-6 py-4 text-slate-600">
+                                                {lead.phone ? formatPhoneNumber(lead.phone) : '-'}
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-600">{lead.email || '-'}</td>
+                                            <td className="px-6 py-4">
+                                                <Link
+                                                    href={`/leads/${lead.id}`}
+                                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                >
+                                                    View
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
+                                            No leads in this group
                                         </td>
                                     </tr>
-                                ))}
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -184,9 +331,9 @@ export default function LeadGroupDetail({ id }) {
                         <div className="space-y-4">
                             <div className="p-4 bg-slate-50 rounded-xl">
                                 <p className="text-slate-800 font-medium mb-1">Group Notes</p>
-                                <p className="text-slate-600 text-sm">{group.description}</p>
+                                <p className="text-slate-600 text-sm">{group.order_note || 'No notes available'}</p>
                                 <p className="text-xs text-slate-400 mt-2">
-                                    Created: {formatDate(group.dateCreated)}
+                                    Created: {formatDate(group.created_at)}
                                 </p>
                             </div>
                         </div>
@@ -200,13 +347,24 @@ export default function LeadGroupDetail({ id }) {
                                 groupActivities.map((activity) => (
                                     <div key={activity.id} className="p-4 bg-slate-50 rounded-xl">
                                         <div className="flex items-center justify-between mb-2">
-                                            <p className="font-medium text-slate-800">{activity.title}</p>
+                                            <p className="font-medium text-slate-800">
+                                                {activity.activity_type ? activity.activity_type.charAt(0).toUpperCase() + activity.activity_type.slice(1) : 'Activity'}
+                                            </p>
                                             <span className="text-xs text-slate-400">
-                                                {formatDate(activity.createdDate)}
+                                                {formatDate(activity.created_at)}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-slate-600">{activity.description}</p>
-                                        <p className="text-xs text-slate-400 mt-1">By: {activity.createdBy}</p>
+                                        <p className="text-sm text-slate-600">{activity.content || 'No content'}</p>
+                                        {activity.status && (
+                                            <span className={`inline-block mt-2 px-2 py-1 rounded text-xs font-medium ${activity.status === 'completed'
+                                                ? 'bg-green-100 text-green-700'
+                                                : activity.status === 'pending'
+                                                    ? 'bg-orange-100 text-orange-700'
+                                                    : 'bg-slate-100 text-slate-700'
+                                                }`}>
+                                                {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
+                                            </span>
+                                        )}
                                     </div>
                                 ))
                             ) : (

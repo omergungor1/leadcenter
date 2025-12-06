@@ -124,7 +124,7 @@ export default function TopBar() {
             try {
                 const { data, error } = await supabase
                     .from('leads')
-                    .select('id, company, name, city, district, email, phone, business_type')
+                    .select('id, company, name, city, district, phone, business_type')
                     .eq('user_id', userId)
                     .eq('is_active', true)
                     .or(

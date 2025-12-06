@@ -33,12 +33,21 @@ const bottomMenuItems = [
     { icon: CreditCard, label: 'Account', path: '/account' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onCollapseChange }) {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const pathname = usePathname();
 
     const isExpanded = isHovered || !isCollapsed;
+
+    // Notify parent about collapse state changes
+    const handleCollapseToggle = () => {
+        const newCollapsed = !isCollapsed;
+        setIsCollapsed(newCollapsed);
+        if (onCollapseChange) {
+            onCollapseChange(newCollapsed);
+        }
+    };
 
     return (
         <div
@@ -72,7 +81,7 @@ export default function Sidebar() {
                     )}
                     {isExpanded && (
                         <button
-                            onClick={() => setIsCollapsed(!isCollapsed)}
+                            onClick={handleCollapseToggle}
                             className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
                         >
                             {isCollapsed ? <Menu size={20} /> : <X size={20} />}

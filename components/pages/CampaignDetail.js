@@ -93,9 +93,10 @@ export default function CampaignDetail({ id }) {
                     }
                 }
 
-                // Fetch campaign activities
+                // Fetch campaign activities (only non-deleted)
                 const { data: activitiesData, error: activitiesError } = await fetchAll('activities', '*', {
                     campaign_id: id,
+                    is_deleted: false,
                 });
 
                 if (activitiesError) {

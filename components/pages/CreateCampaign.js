@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, Plus, X, Search } from 'lucide-react';
-import Link from 'next/link';
 import { Button } from '../ui/button';
+import Link from 'next/link';
 import { useAuth } from '@/lib/supabase/hooks';
 import { fetchAll, insert, insertMany } from '@/lib/supabase/database';
 import { supabase } from '@/lib/supabase/client';
@@ -610,7 +610,9 @@ export default function CreateCampaign() {
                             Cancel
                         </Button>
                     </Link>
-                    <Button type="submit" disabled={!isFormValid || isSaving} className="flex items-center gap-2">
+                    <button type="submit" disabled={!isFormValid || isSaving}
+                        className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium disabled:bg-slate-300 disabled:cursor-not-allowed"
+                    >
                         {isSaving ? (
                             <>
                                 <Loader2 size={18} className="animate-spin" />
@@ -622,7 +624,7 @@ export default function CreateCampaign() {
                                 <span>Save Campaign</span>
                             </>
                         )}
-                    </Button>
+                    </button>
                 </div>
             </form>
         </div>

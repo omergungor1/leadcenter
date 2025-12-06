@@ -86,7 +86,13 @@ export default function AccountPage() {
                 if (plansError) {
                     console.error('Error fetching plans:', plansError);
                 } else {
-                    setPlans(plansData || []);
+                    // Sort plans by price (ascending - from smallest to largest)
+                    const sortedPlans = (plansData || []).sort((a, b) => {
+                        const priceA = parseFloat(a.price) || 0;
+                        const priceB = parseFloat(b.price) || 0;
+                        return priceA - priceB;
+                    });
+                    setPlans(sortedPlans);
                 }
 
                 // Fetch all active credit packages
