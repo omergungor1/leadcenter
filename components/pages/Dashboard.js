@@ -88,8 +88,9 @@ export default function Dashboard() {
                     .select('*')
                     .eq('user_id', userId)
                     .eq('is_deleted', false)
+                    .eq('status', 'pending')
                     .not('due_date', 'is', null)
-                    .gte('due_date', todayStart)
+                    // .gte('due_date', todayStart)
                     .lte('due_date', todayEndStr)
                     .order('due_date', { ascending: true });
 
@@ -199,12 +200,12 @@ export default function Dashboard() {
                     const groupsWithCounts = await Promise.all(
                         sorted.map(async (group) => {
                             // Count leads in this group (from lead_groups_map)
-                            const { data: mapData } = await fetchAll('lead_groups_map', 'id', {
-                                group_id: group.id,
+                            const { data: mapData } = await fetchAll('lead_groups', 'lead_count', {
+                                id: group.id,
                             });
                             return {
                                 ...group,
-                                leadCount: mapData?.length || 0,
+                                leadCount: mapData[0].lead_count || 0,
                             };
                         })
                     );
@@ -234,13 +235,37 @@ export default function Dashboard() {
                     // Fetch lead counts for each campaign
                     const campaignsWithCounts = await Promise.all(
                         campaignsData.map(async (campaign) => {
-                            // Count leads in this campaign (from campaign_leads)
+                            // Count leads in this campaign (from campaign_leads - tek tek eklenen leadler)
                             const { data: leadsData } = await fetchAll('campaign_leads', 'id', {
                                 campaign_id: campaign.id,
                             });
+                            const individualLeadCount = leadsData?.length || 0;
+
+                            // Count leads from groups (campaign_groups -> lead_groups -> lead_count)
+                            const { data: campaignGroupsData } = await fetchAll('campaign_groups', 'lead_group_id', {
+                                campaign_id: campaign.id,
+                            });
+
+                            let groupLeadCount = 0;
+                            if (campaignGroupsData && campaignGroupsData.length > 0) {
+                                const leadGroupIds = campaignGroupsData.map((cg) => cg.lead_group_id);
+                                const { data: leadGroupsData } = await fetchAll('lead_groups', 'lead_count', {
+                                    id: leadGroupIds,
+                                });
+
+                                if (leadGroupsData && leadGroupsData.length > 0) {
+                                    groupLeadCount = leadGroupsData.reduce((sum, group) => {
+                                        return sum + (group.lead_count || 0);
+                                    }, 0);
+                                }
+                            }
+
+                            // Toplam lead sayısı = tek tek eklenen + grup olarak eklenen
+                            const totalLeadCount = individualLeadCount + groupLeadCount;
+
                             return {
                                 ...campaign,
-                                leadCount: leadsData?.length || 0,
+                                leadCount: totalLeadCount,
                                 sent: 0, // Can be calculated from activities later
                             };
                         })
@@ -440,10 +465,15 @@ export default function Dashboard() {
                                         className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
                                     >
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-medium text-slate-800 truncate">
-                                                {task.content || getActivityTypeLabel(task.activity_type)}
-                                            </p>
-                                            <p className="text-sm text-slate-500 truncate">{leadName}</p>
+                                            <Link
+                                                href={`/leads/${task.lead_id}`}
+                                                className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                                            >
+                                                <p className="font-medium text-slate-800 truncate">
+                                                    {task.content || getActivityTypeLabel(task.activity_type)}
+                                                </p>
+                                            </Link>
+                                            <p className="text-sm text-slate-500 truncate">{leadName} {task.due_date.split('T')[0].split('-').reverse().join('/')}</p>
                                         </div>
                                         <div className="flex items-center gap-2 flex-shrink-0">
                                             <span
