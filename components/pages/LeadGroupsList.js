@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Eye, Download, Plus, ChevronDown, FileText, Contact, EllipsisVertical, Edit, Trash2, X } from 'lucide-react';
+import { Eye, Download, Plus, EllipsisVertical, Edit, Trash2, X } from 'lucide-react';
 import { formatDate } from '../../utils/formatDate';
 import { Button } from '../ui/button';
 import {
@@ -15,6 +15,7 @@ import { useAuth } from '@/lib/supabase/hooks';
 import { fetchAll, updateById } from '@/lib/supabase/database';
 import { supabase } from '@/lib/supabase/client';
 import CreateLeadGroupModal from '../modals/CreateLeadGroupModal';
+import ExportLeadGroupModal from '../modals/ExportLeadGroupModal';
 import { toast } from 'sonner';
 
 export default function LeadGroupsList() {
@@ -23,6 +24,7 @@ export default function LeadGroupsList() {
     const [leadGroups, setLeadGroups] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [exportingGroup, setExportingGroup] = useState(null);
     const [editingGroup, setEditingGroup] = useState(null);
     const [editGroupName, setEditGroupName] = useState('');
     const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -127,14 +129,8 @@ export default function LeadGroupsList() {
         return status.charAt(0).toUpperCase() + status.slice(1);
     };
 
-    const handleExportCSV = (groupId) => {
-        // Mock: Export to CSV
-        alert(`Exporting group ${groupId} to CSV... (Mock)`);
-    };
-
-    const handleExportVCF = (groupId) => {
-        // Mock: Export to VCF
-        alert(`Exporting group ${groupId} to VCF... (Mock)`);
+    const handleExport = (group) => {
+        setExportingGroup(group);
     };
 
     const handleEdit = (group) => {
@@ -289,7 +285,7 @@ export default function LeadGroupsList() {
                                                 group.status
                                             )}`}
                                         >
-                                            {formatStatus(group.status)}
+                                            {group.status == 'pending' ? 'Beklemede' : group.status == 'processing' ? 'İşleniyor' : group.status == 'completed' ? 'Tamamlandı' : 'İptal Edildi'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-slate-600">
@@ -300,33 +296,15 @@ export default function LeadGroupsList() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div className="flex items-center gap-3">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="outline" size="sm"
-                                                        className="focus-visible:outline-none focus-visible:ring-0"
-                                                    >
-                                                        <Download size={16} />
-                                                        İndir
-                                                        <ChevronDown size={14} />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-48 bg-white">
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleExportCSV(group.id)}
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <FileText className="mr-2 h-4 w-4" />
-                                                        <span>İndir (.csv)</span>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleExportVCF(group.id)}
-                                                        className="cursor-pointer"
-                                                    >
-                                                        <Contact className="mr-2 h-4 w-4" />
-                                                        <span>İndir (.vcf)</span>
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleExport(group)}
+                                                className="focus-visible:outline-none focus-visible:ring-0"
+                                            >
+                                                <Download size={16} />
+                                                İndir
+                                            </Button>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button
@@ -369,6 +347,31 @@ export default function LeadGroupsList() {
                     userId={userId}
                     onClose={() => setShowCreateModal(false)}
                     onSuccess={handleCreateSuccess}
+                />
+            )}
+
+            {/* Export Lead Group Modal */}
+            {exportingGroup && (
+                <ExportLeadGroupModal
+                    group={exportingGroup}
+                    onClose={() => {
+                        setExportingGroup(null);
+                        // Refresh the list to get updated export status
+                        if (userId) {
+                            fetchAll('lead_groups', '*', {
+                                user_id: userId,
+                                is_active: true,
+                                is_deleted: false,
+                            }).then(({ data, error }) => {
+                                if (!error && data) {
+                                    const sorted = data.sort(
+                                        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+                                    );
+                                    setLeadGroups(sorted);
+                                }
+                            });
+                        }
+                    }}
                 />
             )}
 

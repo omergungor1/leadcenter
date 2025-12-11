@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Eye, Filter, Loader2, X, ChevronDown } from 'lucide-react';
+import { Eye, Filter, Loader2, X, ChevronDown, Plus } from 'lucide-react';
 import { formatDate } from '../../utils/formatDate';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 import { useAuth } from '@/lib/supabase/hooks';
 import { fetchAll, fetchById } from '@/lib/supabase/database';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import CreateLeadModal from '../modals/CreateLeadModal';
 
 const PAGE_SIZE = 10;
 
@@ -379,6 +380,7 @@ export default function LeadsList({ favoritesOnly = false }) {
     // We'll fetch a sample to populate filters, or use a separate query
     const [uniqueCities, setUniqueCities] = useState([]);
     const [uniqueBusinessTypes, setUniqueBusinessTypes] = useState([]);
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     useEffect(() => {
         const fetchFilterOptions = async () => {
@@ -415,16 +417,38 @@ export default function LeadsList({ favoritesOnly = false }) {
     if (authLoading || isLoading) {
         return (
             <div className="p-6 flex items-center justify-center h-full">
-                <div className="text-slate-500">Loading...</div>
+                <div className="text-slate-500">Yükleniyor...</div>
             </div>
         );
     }
 
+    const handleLeadCreated = () => {
+        // Refresh the leads list
+        fetchLeads(0, true, false);
+    };
+
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-3xl font-bold text-slate-800">
-                {favoritesOnly ? 'Favoriler' : 'Müşteriler'}
-            </h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold text-slate-800">
+                    {favoritesOnly ? 'Favoriler' : 'Müşteriler'}
+                </h1>
+                <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium"
+                >
+                    <Plus size={18} />
+                    <span>Yeni</span>
+                </button>
+            </div>
+
+            {showCreateModal && (
+                <CreateLeadModal
+                    userId={userId}
+                    onClose={() => setShowCreateModal(false)}
+                    onSuccess={handleLeadCreated}
+                />
+            )}
 
             {/* Filters */}
             {!favoritesOnly && (
@@ -441,7 +465,7 @@ export default function LeadsList({ favoritesOnly = false }) {
                                 onChange={(e) => setFilters({ ...filters, leadGroup: e.target.value })}
                                 className="w-full px-4 py-2 pr-8 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                             >
-                                <option value="">Tüm Müşteri Grupları</option>
+                                <option value="">Tümü</option>
                                 {leadGroups.map((group) => (
                                     <option key={group.id} value={group.id}>
                                         {group.name}
@@ -470,7 +494,7 @@ export default function LeadsList({ favoritesOnly = false }) {
                                 onChange={(e) => setFilters({ ...filters, city: e.target.value })}
                                 className="w-full px-4 py-2 pr-8 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                             >
-                                <option value="">Tüm Şehirler</option>
+                                <option value="">Tümü</option>
                                 {uniqueCities.map((city) => (
                                     <option key={city} value={city}>
                                         {city}
@@ -499,7 +523,7 @@ export default function LeadsList({ favoritesOnly = false }) {
                                 onChange={(e) => setFilters({ ...filters, business_type: e.target.value })}
                                 className="w-full px-4 py-2 pr-8 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                             >
-                                <option value="">Tüm Kategoriler</option>
+                                <option value="">Tümü</option>
                                 {uniqueBusinessTypes.map((type) => (
                                     <option key={type} value={type}>
                                         {type}
@@ -528,7 +552,7 @@ export default function LeadsList({ favoritesOnly = false }) {
                                 onChange={(e) => setFilters({ ...filters, tag: e.target.value })}
                                 className="w-full px-4 py-2 pr-8 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                             >
-                                <option value="">Tüm Etiketler</option>
+                                <option value="">Tümü</option>
                                 {tags.map((tag) => (
                                     <option key={tag.id} value={tag.id}>
                                         {tag.name}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Eye, Filter, Plus, Play, Pause, Loader2 } from 'lucide-react';
+import { Eye, Filter, Plus, Play, Pause, Loader2, X, ChevronDown } from 'lucide-react';
 import { formatDate } from '../../utils/formatDate';
 import { useAuth } from '@/lib/supabase/hooks';
 import { fetchAll, updateById } from '@/lib/supabase/database';
@@ -153,11 +153,11 @@ export default function CampaignsList() {
             case 'whatsapp':
                 return 'WhatsApp';
             case 'mail':
-                return 'Email';
+                return 'E-Posta';
             case 'call':
-                return 'Call';
+                return 'Telefon';
             case 'visit':
-                return 'Visit';
+                return 'Ziyaret';
             default:
                 return type || '-';
         }
@@ -166,13 +166,13 @@ export default function CampaignsList() {
     const getStatusLabel = (status) => {
         switch (status?.toLowerCase()) {
             case 'active':
-                return 'Active';
+                return 'Devam Ediyor';
             case 'completed':
-                return 'Completed';
+                return 'Tamamlandı';
             case 'cancelled':
-                return 'Cancelled';
+                return 'İptal Edildi';
             case 'draft':
-                return 'Draft';
+                return 'Taslak';
             default:
                 return status || '-';
         }
@@ -190,11 +190,11 @@ export default function CampaignsList() {
             });
 
             if (error) {
-                toast.error('Error updating campaign: ' + error.message);
+                toast.error('Kampanya güncellenirken hata oluştu: ' + error.message);
                 return;
             }
 
-            toast.success(`Campaign ${newStatus === 'active' ? 'started' : 'paused'} successfully!`);
+            toast.success(`Kampanya ${newStatus === 'active' ? 'başlatıldı' : 'duraklatıldı'} başarıyla!`);
 
             // Update local state
             setCampaigns((prev) =>
@@ -215,7 +215,7 @@ export default function CampaignsList() {
             <div className="p-6 flex items-center justify-center h-full">
                 <div className="flex items-center gap-2 text-slate-500">
                     <Loader2 size={20} className="animate-spin" />
-                    <span>Loading campaigns...</span>
+                    <span>Kampanyalar yükleniyor...</span>
                 </div>
             </div>
         );
@@ -224,13 +224,13 @@ export default function CampaignsList() {
     return (
         <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-slate-800">Campaigns</h1>
+                <h1 className="text-3xl font-bold text-slate-800">Kampanyalar</h1>
                 <Link href="/campaigns/new">
                     <button
                         className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium"
                     >
                         <Plus size={18} />
-                        <span>Campaign</span>
+                        <span>Kampanya Ekle</span>
                     </button>
                 </Link>
             </div>
@@ -239,36 +239,71 @@ export default function CampaignsList() {
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                     <Filter size={18} className="text-slate-500" />
-                    <span className="font-medium text-slate-700">Filters</span>
+                    <span className="font-medium text-slate-700">Filtreler</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <select
-                        value={filters.type}
-                        onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                        className="px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="">All Types</option>
-                        <option value="whatsapp">WhatsApp</option>
-                        <option value="mail">Email</option>
-                        <option value="call">Call</option>
-                        <option value="visit">Visit</option>
-                    </select>
-                    <select
-                        value={filters.status}
-                        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                        className="px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                        <option value="">All Statuses</option>
-                        <option value="draft">Draft</option>
-                        <option value="active">Active</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
-                    </select>
+                    {/* Tür Filtresi */}
+                    <div className="relative">
+                        <select
+                            value={filters.type}
+                            onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+                            className="w-full px-4 py-2 pr-8 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                        >
+                            <option value="">Tümü</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="mail">E-posta</option>
+                            <option value="call">Telefon</option>
+                            <option value="visit">Ziyaret</option>
+                        </select>
+                        {filters.type ? (
+                            <button
+                                onClick={() => setFilters({ ...filters, type: '' })}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-full transition-colors"
+                                title="Filtreyi temizle"
+                            >
+                                <X size={16} className="text-slate-500" />
+                            </button>
+                        ) : (
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <ChevronDown size={16} className="text-slate-500" />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Durum Filtresi */}
+                    <div className="relative">
+                        <select
+                            value={filters.status}
+                            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                            className="w-full px-4 py-2 pr-8 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                        >
+                            <option value="">Tümü</option>
+                            <option value="draft">Taslak</option>
+                            <option value="active">Devam Ediyor</option>
+                            <option value="completed">Tamamlandı</option>
+                            <option value="cancelled">İptal Edildi</option>
+                        </select>
+                        {filters.status ? (
+                            <button
+                                onClick={() => setFilters({ ...filters, status: '' })}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-full transition-colors"
+                                title="Filtreyi temizle"
+                            >
+                                <X size={16} className="text-slate-500" />
+                            </button>
+                        ) : (
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <ChevronDown size={16} className="text-slate-500" />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Tüm Filtreleri Temizle Butonu */}
                     <button
                         onClick={() => setFilters({ type: '', status: '' })}
                         className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
                     >
-                        Clear Filters
+                        Tümünü Temizle
                     </button>
                 </div>
             </div>
@@ -280,31 +315,31 @@ export default function CampaignsList() {
                         <thead className="bg-slate-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Campaign Name
+                                    Kampanya Adı
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Type
+                                    Tür
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Status
+                                    Durum
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Total Leads
+                                    Toplam Müşteri
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Sent
+                                    Gönderilen
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Remaining
+                                    Kalan
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Progress
+                                    İlerleme
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Created Date
+                                    Oluşturulma Tarihi
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Actions
+                                    İşlemler
                                 </th>
                             </tr>
                         </thead>
@@ -369,7 +404,7 @@ export default function CampaignsList() {
                                                     <button
                                                         onClick={() => handleToggleStatus(campaign)}
                                                         className="text-orange-600 hover:text-orange-800 flex items-center gap-1"
-                                                        title="Pause Campaign"
+                                                        title="Kampanyayı Duraklat"
                                                     >
                                                         <Pause size={16} />
                                                     </button>
@@ -377,7 +412,7 @@ export default function CampaignsList() {
                                                     <button
                                                         onClick={() => handleToggleStatus(campaign)}
                                                         className="text-green-600 hover:text-green-800 flex items-center gap-1"
-                                                        title="Start Campaign"
+                                                        title="Kampanyayı Başlat"
                                                     >
                                                         <Play size={16} />
                                                     </button>
@@ -387,7 +422,7 @@ export default function CampaignsList() {
                                                     className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
                                                 >
                                                     <Eye size={16} />
-                                                    View
+                                                    Görüntüle
                                                 </Link>
                                             </div>
                                         </td>
@@ -396,7 +431,7 @@ export default function CampaignsList() {
                             ) : (
                                 <tr>
                                     <td colSpan="9" className="px-6 py-8 text-center text-slate-500">
-                                        No campaigns found
+                                        Kampanya bulunamadı.
                                     </td>
                                 </tr>
                             )}

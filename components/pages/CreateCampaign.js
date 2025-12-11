@@ -75,6 +75,8 @@ export default function CreateCampaign() {
             try {
                 const { data: groupsData } = await fetchAll('lead_groups', '*', {
                     user_id: userId,
+                    is_active: true,
+                    is_deleted: false,
                 });
                 setLeadGroups(groupsData || []);
             } catch (error) {
@@ -110,7 +112,7 @@ export default function CreateCampaign() {
             try {
                 const { data, error } = await supabase
                     .from('leads')
-                    .select('id, company, name, city, district, email, phone, business_type ')
+                    .select('id, company, name, city, district, phone, business_type ')
                     .eq('user_id', userId)
                     .eq('is_active', true)
                     .or(
@@ -308,7 +310,7 @@ export default function CreateCampaign() {
             <div className="p-6 flex items-center justify-center h-full">
                 <div className="flex items-center gap-2 text-slate-500">
                     <Loader2 size={20} className="animate-spin" />
-                    <span>Loading...</span>
+                    <span>Yükleniyor...</span>
                 </div>
             </div>
         );
@@ -323,7 +325,7 @@ export default function CreateCampaign() {
                 >
                     <ArrowLeft size={20} />
                 </button>
-                <h1 className="text-3xl font-bold text-slate-800">Create Campaign</h1>
+                <h1 className="text-3xl font-bold text-slate-800">Kampanya Ekle</h1>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -333,14 +335,14 @@ export default function CreateCampaign() {
                         {/* Campaign Name */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Campaign Name <span className="text-red-500">*</span>
+                                Kampanya Adı <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="e.g., WhatsApp Campaign - Kuaförler"
+                                placeholder="Örn: WhatsApp Kampanyası - Kuaförler"
                                 required
                             />
                         </div>
@@ -348,7 +350,7 @@ export default function CreateCampaign() {
                         {/* Campaign Type */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Campaign Type <span className="text-red-500">*</span>
+                                Kampanya Türü <span className="text-red-500">*</span>
                             </label>
                             <select
                                 value={formData.type}
@@ -365,11 +367,11 @@ export default function CreateCampaign() {
                                 className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             >
-                                <option value="">Select campaign type</option>
+                                <option value="">Kampanya türü seçin</option>
                                 <option value="whatsapp">WhatsApp</option>
-                                <option value="mail">Email</option>
-                                <option value="call">Call</option>
-                                <option value="visit">Visit</option>
+                                <option value="mail">E-posta</option>
+                                <option value="call">Telefon</option>
+                                <option value="visit">Ziyaret</option>
                             </select>
                         </div>
                     </div>
@@ -378,7 +380,7 @@ export default function CreateCampaign() {
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Start Date
+                                Başlangıç Tarihi
                             </label>
                             <input
                                 type="date"
@@ -389,7 +391,7 @@ export default function CreateCampaign() {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                End Date
+                                Bitiş Tarihi
                             </label>
                             <input
                                 type="date"
@@ -403,13 +405,13 @@ export default function CreateCampaign() {
                     {/* Lead Selection - Split Layout */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Lead Selection <span className="text-red-500">*</span>
+                            Müşteri Seçimi <span className="text-red-500">*</span>
                         </label>
 
                         <div className="grid grid-cols-2 gap-4">
                             {/* Left: Lead Groups */}
                             <div className="border border-slate-200 rounded-xl p-4">
-                                <h3 className="text-sm font-medium text-slate-700 mb-3">Lead Groups</h3>
+                                <h3 className="text-sm font-medium text-slate-700 mb-3">Müşteri Grupları</h3>
                                 <div className="max-h-80 overflow-y-auto space-y-2">
                                     {leadGroups.length > 0 ? (
                                         leadGroups.map((group) => (
@@ -426,14 +428,14 @@ export default function CreateCampaign() {
                                                 <div className="flex-1">
                                                     <p className="font-medium text-slate-800">{group.name}</p>
                                                     <p className="text-sm text-slate-500">
-                                                        {group.lead_count || 0} leads
+                                                        {group.lead_count || 0} müşteri
                                                     </p>
                                                 </div>
                                             </label>
                                         ))
                                     ) : (
                                         <p className="text-sm text-slate-500 text-center py-4">
-                                            No lead groups found
+                                            Müşteri grupları bulunamadı
                                         </p>
                                     )}
                                 </div>
@@ -441,7 +443,7 @@ export default function CreateCampaign() {
 
                             {/* Right: Individual Lead Search */}
                             <div className="border border-slate-200 rounded-xl p-4 relative">
-                                <h3 className="text-sm font-medium text-slate-700 mb-3">Search Leads</h3>
+                                <h3 className="text-sm font-medium text-slate-700 mb-3">Müşteri Ara</h3>
                                 <div className="relative mb-3">
                                     <Search
                                         size={18}
@@ -451,7 +453,7 @@ export default function CreateCampaign() {
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Search by company, city, district..."
+                                        placeholder="Şirket, şehir, ilçe gibi bilgilerle ara..."
                                         className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     />
                                 </div>
@@ -462,7 +464,7 @@ export default function CreateCampaign() {
                                         {isSearching ? (
                                             <div className="p-4 text-center text-slate-500">
                                                 <Loader2 size={16} className="animate-spin mx-auto mb-2" />
-                                                <span className="text-sm">Searching...</span>
+                                                <span className="text-sm">Aranıyor...</span>
                                             </div>
                                         ) : searchResults.length > 0 ? (
                                             <div className="divide-y divide-slate-200">
@@ -490,14 +492,14 @@ export default function CreateCampaign() {
                                                             className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-xs font-medium disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-1"
                                                         >
                                                             <Plus size={14} />
-                                                            Add
+                                                            Ekle
                                                         </button>
                                                     </div>
                                                 ))}
                                             </div>
                                         ) : (
                                             <div className="p-4 text-center text-slate-500 text-sm">
-                                                No leads found
+                                                Müşteri bulunamadı
                                             </div>
                                         )}
                                     </div>
@@ -518,7 +520,7 @@ export default function CreateCampaign() {
                                                     type="button"
                                                     onClick={() => removeLead(lead.id)}
                                                     className="p-0.5 hover:bg-blue-200 rounded transition-colors"
-                                                    title="Remove"
+                                                    title="Kaldır"
                                                 >
                                                     <X size={14} className="text-slate-600" />
                                                 </button>
@@ -536,14 +538,14 @@ export default function CreateCampaign() {
                     {formData.type === 'whatsapp' && (
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Message <span className="text-red-500">*</span>
+                                Mesaj <span className="text-red-500">*</span>
                             </label>
                             <textarea
                                 value={formData.message}
                                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                                 className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 rows="6"
-                                placeholder="Enter your WhatsApp message. Use {{company_name}}, {{city}}, {{district}} as merge tags."
+                                placeholder="WhatsApp mesajınızı girin. {{company_name}}, {{city}}, {{district}} gibi merge etiketlerini kullanın."
                                 required
                             />
                         </div>
@@ -554,7 +556,7 @@ export default function CreateCampaign() {
                         <>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Email Title <span className="text-red-500">*</span>
+                                    E-posta Başlığı <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -563,13 +565,13 @@ export default function CreateCampaign() {
                                         setFormData({ ...formData, emailTitle: e.target.value })
                                     }
                                     className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Email subject"
+                                    placeholder="E-posta başlığınızı girin."
                                     required
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Email Content <span className="text-red-500">*</span>
+                                    E-posta İçeriği <span className="text-red-500">*</span>
                                 </label>
                                 <textarea
                                     value={formData.emailContent}
@@ -578,7 +580,7 @@ export default function CreateCampaign() {
                                     }
                                     className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     rows="8"
-                                    placeholder="Enter your email content. Use {{company_name}}, {{city}}, {{district}} as merge tags."
+                                    placeholder="E-posta içeriğinizinizi girin. {{company_name}}, {{city}}, {{district}} gibi merge etiketlerini kullanın."
                                     required
                                 />
                             </div>
@@ -589,14 +591,14 @@ export default function CreateCampaign() {
                     {(formData.type === 'call' || formData.type === 'visit') && (
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Note <span className="text-red-500">*</span>
+                                Not <span className="text-red-500">*</span>
                             </label>
                             <textarea
                                 value={formData.note}
                                 onChange={(e) => setFormData({ ...formData, note: e.target.value })}
                                 className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 rows="6"
-                                placeholder={`Enter notes for ${formData.type} campaign`}
+                                placeholder={`${formData.type} kampanyası için notlarınızı girin.`}
                                 required
                             />
                         </div>
@@ -607,7 +609,7 @@ export default function CreateCampaign() {
                 <div className="flex items-center justify-end gap-3">
                     <Link href="/campaigns">
                         <Button type="button" variant="outline">
-                            Cancel
+                            İptal
                         </Button>
                     </Link>
                     <button type="submit" disabled={!isFormValid || isSaving}
@@ -616,12 +618,12 @@ export default function CreateCampaign() {
                         {isSaving ? (
                             <>
                                 <Loader2 size={18} className="animate-spin" />
-                                <span>Saving...</span>
+                                <span>Kaydediliyor...</span>
                             </>
                         ) : (
                             <>
                                 <Save size={18} />
-                                <span>Save Campaign</span>
+                                <span>Kampanya Kaydediliyor</span>
                             </>
                         )}
                     </button>

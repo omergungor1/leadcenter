@@ -101,6 +101,11 @@ CREATE TABLE lead_groups (
     lead_count INTEGER DEFAULT 0,
     ordered_at TIMESTAMP,
     completed_at TIMESTAMP,
+    csv_url TEXT,
+    csv_created_at TIMESTAMP,
+    vcf_url TEXT,
+    vcf_created_at TIMESTAMP,
+    export_status TEXT CHECK (export_status IN ('processing', 'completed', 'error')) DEFAULT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     is_deleted BOOLEAN DEFAULT FALSE,
     deleted_at TIMESTAMP,
@@ -138,6 +143,8 @@ CREATE TABLE leads (
     enrichment_error TEXT,
     primary_group_id UUID REFERENCES lead_groups(id),
     is_active BOOLEAN DEFAULT TRUE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    deleted_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
