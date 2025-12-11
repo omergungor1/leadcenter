@@ -192,7 +192,7 @@ export default function NotificationDropdown({ userId, onClose, onNotificationCh
             <div className="flex items-center justify-between p-4 border-b border-slate-200 select-none">
                 <div className="flex items-center gap-2">
                     <Bell size={20} className="text-slate-600" />
-                    <h3 className="font-semibold text-slate-800">Notifications</h3>
+                    <h3 className="font-semibold text-slate-800">Bildirimler</h3>
                     {unreadCount > 0 && (
                         <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-medium rounded-full">
                             {unreadCount}
@@ -205,7 +205,7 @@ export default function NotificationDropdown({ userId, onClose, onNotificationCh
                             onClick={handleMarkAllAsRead}
                             className="text-xs text-blue-600 hover:text-blue-800 font-medium select-none"
                         >
-                            Mark all as read
+                            Tümünü Okundu İşaretle
                         </button>
                     )}
                     <button
@@ -220,11 +220,11 @@ export default function NotificationDropdown({ userId, onClose, onNotificationCh
             {/* Notifications List */}
             <div className="flex-1 overflow-y-auto">
                 {isLoading ? (
-                    <div className="p-8 text-center text-slate-500">Loading...</div>
+                    <div className="p-8 text-center text-slate-500">Yükleniyor...</div>
                 ) : notifications.length === 0 ? (
                     <div className="p-8 text-center text-slate-500">
                         <Bell size={48} className="mx-auto mb-2 text-slate-300" />
-                        <p>No notifications</p>
+                        <p>Bildirim yok</p>
                     </div>
                 ) : (
                     <div className="divide-y divide-slate-100">
@@ -266,7 +266,7 @@ export default function NotificationDropdown({ userId, onClose, onNotificationCh
                                                         handleMarkAsRead(notification.id)
                                                     }
                                                     className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
-                                                    title="Mark as read"
+                                                    title="Okundu İşaretle"
                                                 >
                                                     <Check size={16} className="text-slate-600" />
                                                 </button>
@@ -274,7 +274,7 @@ export default function NotificationDropdown({ userId, onClose, onNotificationCh
                                             <button
                                                 onClick={() => handleDelete(notification.id)}
                                                 className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                                                title="Delete"
+                                                title="Sil"
                                             >
                                                 <Trash2 size={16} className="text-red-600" />
                                             </button>

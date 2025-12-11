@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Eye, Filter, Loader2 } from 'lucide-react';
+import { Eye, Filter, Loader2, X, ChevronDown } from 'lucide-react';
 import { formatDate } from '../../utils/formatDate';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 import { useAuth } from '@/lib/supabase/hooks';
@@ -17,7 +17,9 @@ export default function LeadsList({ favoritesOnly = false }) {
     const [userId, setUserId] = useState(null);
     const [leads, setLeads] = useState([]);
     const [leadGroups, setLeadGroups] = useState([]);
+    const [tags, setTags] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isFiltering, setIsFiltering] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [page, setPage] = useState(0);
@@ -25,6 +27,7 @@ export default function LeadsList({ favoritesOnly = false }) {
         leadGroup: '',
         city: '',
         business_type: '',
+        tag: '',
     });
     const observerTarget = useRef(null);
 
@@ -65,6 +68,7 @@ export default function LeadsList({ favoritesOnly = false }) {
                 const { data, error } = await fetchAll('lead_groups', '*', {
                     user_id: userId,
                     is_active: true,
+                    is_deleted: false,
                 });
 
                 if (error) {
@@ -81,12 +85,43 @@ export default function LeadsList({ favoritesOnly = false }) {
         fetchLeadGroups();
     }, [userId]);
 
+    // Fetch tags for filter
+    useEffect(() => {
+        const fetchTags = async () => {
+            if (!userId) return;
+
+            try {
+                const { data, error } = await fetchAll('lead_tags', '*', {
+                    user_id: userId,
+                    is_active: true,
+                });
+
+                if (error) {
+                    console.error('Error fetching tags:', error);
+                    return;
+                }
+
+                setTags(data || []);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        };
+
+        fetchTags();
+    }, [userId]);
+
     // Fetch leads with pagination
-    const fetchLeads = useCallback(async (pageNum = 0, reset = false) => {
+    const fetchLeads = useCallback(async (pageNum = 0, reset = false, isInitialLoad = false) => {
         if (!userId) return;
 
         if (reset) {
-            setIsLoading(true);
+            // Only show full page loading on initial load, not on filter changes
+            if (isInitialLoad) {
+                setIsLoading(true);
+            } else {
+                // Show filtering indicator instead of full page loading
+                setIsFiltering(true);
+            }
             setPage(0);
             setHasMore(true);
         } else {
@@ -128,6 +163,55 @@ export default function LeadsList({ favoritesOnly = false }) {
                 }
             }
 
+            // If tag filter is active, get lead IDs from that tag
+            let tagLeadIds = null;
+            if (filters.tag) {
+                const { data: tagMapData, error: tagMapError } = await supabase
+                    .from('lead_tag_map')
+                    .select('lead_id')
+                    .eq('tag_id', filters.tag);
+
+                if (tagMapError) {
+                    console.error('Error fetching lead tag map:', tagMapError);
+                    toast.error('Error loading tag');
+                    setIsLoading(false);
+                    setIsLoadingMore(false);
+                    return;
+                }
+
+                if (tagMapData && tagMapData.length > 0) {
+                    tagLeadIds = tagMapData.map((tm) => tm.lead_id);
+                } else {
+                    // No leads with this tag, return empty
+                    if (reset) {
+                        setLeads([]);
+                    }
+                    setHasMore(false);
+                    setIsLoading(false);
+                    setIsLoadingMore(false);
+                    return;
+                }
+            }
+
+            // If both lead group and tag filters are active, find intersection
+            if (leadIds && tagLeadIds) {
+                const intersection = leadIds.filter((id) => tagLeadIds.includes(id));
+                if (intersection.length === 0) {
+                    // No leads matching both filters, return empty
+                    if (reset) {
+                        setLeads([]);
+                    }
+                    setHasMore(false);
+                    setIsLoading(false);
+                    setIsLoadingMore(false);
+                    return;
+                }
+                leadIds = intersection;
+            } else if (tagLeadIds) {
+                // Only tag filter is active
+                leadIds = tagLeadIds;
+            }
+
             // Build base query for count
             let countQuery = supabase
                 .from('leads')
@@ -149,7 +233,7 @@ export default function LeadsList({ favoritesOnly = false }) {
                 dataQuery = dataQuery.eq('is_favorite', true);
             }
 
-            // Apply lead group filter (only if not favoritesOnly)
+            // Apply lead group or tag filter (only if not favoritesOnly)
             if (!favoritesOnly && leadIds && leadIds.length > 0) {
                 countQuery = countQuery.in('id', leadIds);
                 dataQuery = dataQuery.in('id', leadIds);
@@ -204,6 +288,7 @@ export default function LeadsList({ favoritesOnly = false }) {
                             // Fetch groups using fetchAll with array filter
                             const { data: groupsData } = await fetchAll('lead_groups', '*', {
                                 id: groupIds,
+                                is_deleted: false,
                             });
 
                             return {
@@ -246,14 +331,24 @@ export default function LeadsList({ favoritesOnly = false }) {
             toast.error('An error occurred while loading leads');
         } finally {
             setIsLoading(false);
+            setIsFiltering(false);
             setIsLoadingMore(false);
         }
-    }, [userId, filters.city, filters.business_type, filters.leadGroup, favoritesOnly]);
+    }, [userId, filters.city, filters.business_type, filters.leadGroup, filters.tag, favoritesOnly]);
 
-    // Initial load and filter changes
+    // Initial load (only when userId changes)
     useEffect(() => {
-        fetchLeads(0, true);
-    }, [userId, filters.city, filters.business_type, filters.leadGroup]);
+        if (userId) {
+            fetchLeads(0, true, true);
+        }
+    }, [userId]);
+
+    // Filter changes (don't show full page loading)
+    useEffect(() => {
+        if (userId) {
+            fetchLeads(0, true, false);
+        }
+    }, [filters.city, filters.business_type, filters.leadGroup, filters.tag]);
 
     // Intersection Observer for infinite scroll
     useEffect(() => {
@@ -328,7 +423,7 @@ export default function LeadsList({ favoritesOnly = false }) {
     return (
         <div className="p-6 space-y-6">
             <h1 className="text-3xl font-bold text-slate-800">
-                {favoritesOnly ? 'Favorites' : 'Leads'}
+                {favoritesOnly ? 'Favoriler' : 'Müşteriler'}
             </h1>
 
             {/* Filters */}
@@ -336,50 +431,131 @@ export default function LeadsList({ favoritesOnly = false }) {
                 <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
                         <Filter size={18} className="text-slate-500" />
-                        <span className="font-medium text-slate-700">Filters</span>
+                        <span className="font-medium text-slate-700">Filtreler</span>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <select
-                            value={filters.leadGroup}
-                            onChange={(e) => setFilters({ ...filters, leadGroup: e.target.value })}
-                            className="px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">All Lead Groups</option>
-                            {leadGroups.map((group) => (
-                                <option key={group.id} value={group.id}>
-                                    {group.name}
-                                </option>
-                            ))}
-                        </select>
-                        <select
-                            value={filters.city}
-                            onChange={(e) => setFilters({ ...filters, city: e.target.value })}
-                            className="px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">All Cities</option>
-                            {uniqueCities.map((city) => (
-                                <option key={city} value={city}>
-                                    {city}
-                                </option>
-                            ))}
-                        </select>
-                        <select
-                            value={filters.business_type}
-                            onChange={(e) => setFilters({ ...filters, business_type: e.target.value })}
-                            className="px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">All Categories</option>
-                            {uniqueBusinessTypes.map((type) => (
-                                <option key={type} value={type}>
-                                    {type}
-                                </option>
-                            ))}
-                        </select>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        {/* Müşteri Grubu Filtresi */}
+                        <div className="relative">
+                            <select
+                                value={filters.leadGroup}
+                                onChange={(e) => setFilters({ ...filters, leadGroup: e.target.value })}
+                                className="w-full px-4 py-2 pr-8 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                            >
+                                <option value="">Tüm Müşteri Grupları</option>
+                                {leadGroups.map((group) => (
+                                    <option key={group.id} value={group.id}>
+                                        {group.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {filters.leadGroup ? (
+                                <button
+                                    onClick={() => setFilters({ ...filters, leadGroup: '' })}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-full transition-colors"
+                                    title="Filtreyi temizle"
+                                >
+                                    <X size={16} className="text-slate-500" />
+                                </button>
+                            ) : (
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <ChevronDown size={16} className="text-slate-500" />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Şehir Filtresi */}
+                        <div className="relative">
+                            <select
+                                value={filters.city}
+                                onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+                                className="w-full px-4 py-2 pr-8 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                            >
+                                <option value="">Tüm Şehirler</option>
+                                {uniqueCities.map((city) => (
+                                    <option key={city} value={city}>
+                                        {city}
+                                    </option>
+                                ))}
+                            </select>
+                            {filters.city ? (
+                                <button
+                                    onClick={() => setFilters({ ...filters, city: '' })}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-full transition-colors"
+                                    title="Filtreyi temizle"
+                                >
+                                    <X size={16} className="text-slate-500" />
+                                </button>
+                            ) : (
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <ChevronDown size={16} className="text-slate-500" />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Kategori Filtresi */}
+                        <div className="relative">
+                            <select
+                                value={filters.business_type}
+                                onChange={(e) => setFilters({ ...filters, business_type: e.target.value })}
+                                className="w-full px-4 py-2 pr-8 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                            >
+                                <option value="">Tüm Kategoriler</option>
+                                {uniqueBusinessTypes.map((type) => (
+                                    <option key={type} value={type}>
+                                        {type}
+                                    </option>
+                                ))}
+                            </select>
+                            {filters.business_type ? (
+                                <button
+                                    onClick={() => setFilters({ ...filters, business_type: '' })}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-full transition-colors"
+                                    title="Filtreyi temizle"
+                                >
+                                    <X size={16} className="text-slate-500" />
+                                </button>
+                            ) : (
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <ChevronDown size={16} className="text-slate-500" />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Etiket Filtresi */}
+                        <div className="relative">
+                            <select
+                                value={filters.tag}
+                                onChange={(e) => setFilters({ ...filters, tag: e.target.value })}
+                                className="w-full px-4 py-2 pr-8 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                            >
+                                <option value="">Tüm Etiketler</option>
+                                {tags.map((tag) => (
+                                    <option key={tag.id} value={tag.id}>
+                                        {tag.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {filters.tag ? (
+                                <button
+                                    onClick={() => setFilters({ ...filters, tag: '' })}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-full transition-colors"
+                                    title="Filtreyi temizle"
+                                >
+                                    <X size={16} className="text-slate-500" />
+                                </button>
+                            ) : (
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <ChevronDown size={16} className="text-slate-500" />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Tüm Filtreleri Temizle Butonu */}
                         <button
-                            onClick={() => setFilters({ leadGroup: '', city: '', business_type: '' })}
+                            onClick={() => setFilters({ leadGroup: '', city: '', business_type: '', tag: '' })}
                             className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
                         >
-                            Clear Filters
+                            Tümünü Temizle
                         </button>
                     </div>
                 </div>
@@ -392,97 +568,105 @@ export default function LeadsList({ favoritesOnly = false }) {
                         <thead className="bg-slate-50">
                             <tr>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase w-1/4">
-                                    Company Name
+                                    Firma Adı
                                 </th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase w-1/6">
-                                    Category
+                                    Kategori
                                 </th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase w-1/6">
-                                    Phone
+                                    Şehir / İlçe
                                 </th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase w-1/6">
-                                    City / District
+                                    Müşteri Grubu
                                 </th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase w-1/6">
-                                    Source Group
-                                </th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase w-1/6">
-                                    Last Activity
+                                    Son Aktivite
                                 </th>
                                 <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase w-20">
-                                    Actions
+                                    İşlemler
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
-                            {leads.map((lead, index) => {
-                                const companyName = lead.company || lead.name || '';
-                                const truncatedName = companyName.length > 50
-                                    ? companyName.substring(0, 40) + '...'
-                                    : companyName;
-
-                                return (
-                                    <tr key={`${lead.id}-${index}`} className="hover:bg-slate-50 cursor-pointer">
-                                        <td className="px-3 py-2 whitespace-nowrap">
-                                            <Link
-                                                href={`/leads/${lead.id}`}
-                                                className="text-xs font-medium text-slate-800 hover:text-blue-600 truncate block"
-                                                title={companyName}
-                                            >
-                                                {truncatedName}
-                                            </Link>
-                                        </td>
-                                        <td className="px-3 py-2 text-sm text-slate-600 whitespace-nowrap truncate">
-                                            {lead.business_type || '-'}
-                                        </td>
-                                        <td className="px-3 py-2 text-sm text-slate-600 whitespace-nowrap">
-                                            {lead.phone ? formatPhoneNumber(lead.phone) : '-'}
-                                        </td>
-                                        <td className="px-3 py-2 text-sm text-slate-600 whitespace-nowrap truncate">
-                                            {lead.city || '-'} {lead.district ? `/ ${lead.district}` : ''}
-                                        </td>
-                                        <td className="px-3 py-2 text-sm text-slate-600 whitespace-nowrap truncate">
-                                            {lead.primaryGroup?.name || lead.groups?.[0]?.name || '-'}
-                                        </td>
-                                        <td className="px-3 py-2 text-sm text-slate-500 whitespace-nowrap">
-                                            {lead.updated_at ? formatDate(lead.updated_at) : formatDate(lead.created_at)}
-                                        </td>
-                                        <td className="px-3 py-2 whitespace-nowrap">
-                                            <Link
-                                                href={`/leads/${lead.id}`}
-                                                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                            >
-                                                <Eye size={14} />
-                                                <span>View</span>
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                            {/* Loading indicator at the bottom */}
-                            {isLoadingMore && (
+                            {/* Filtering indicator */}
+                            {isFiltering ? (
                                 <tr>
-                                    <td colSpan="7" className="px-3 py-4 text-center">
+                                    <td colSpan="6" className="px-3 py-4 text-center">
                                         <div className="flex items-center justify-center gap-2 text-slate-500">
                                             <Loader2 size={18} className="animate-spin" />
-                                            <span className="text-xs">Loading more leads...</span>
+                                            <span className="text-xs">Filtreleniyor...</span>
                                         </div>
                                     </td>
                                 </tr>
-                            )}
-                            {/* Observer target for infinite scroll */}
-                            {hasMore && !isLoadingMore && (
-                                <tr ref={observerTarget}>
-                                    <td colSpan="7" className="h-1"></td>
-                                </tr>
-                            )}
-                            {/* End of list message */}
-                            {!hasMore && leads.length > 0 && (
-                                <tr>
-                                    <td colSpan="7" className="px-3 py-3 text-center text-slate-500 text-xs">
-                                        No more leads to load
-                                    </td>
-                                </tr>
+                            ) : (
+                                <>
+                                    {leads.map((lead, index) => {
+                                        const companyName = lead.company || lead.name || '';
+                                        const truncatedName = companyName.length > 50
+                                            ? companyName.substring(0, 40) + '...'
+                                            : companyName;
+
+                                        return (
+                                            <tr key={`${lead.id}-${index}`} className="hover:bg-slate-50 cursor-pointer">
+                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                    <Link
+                                                        href={`/leads/${lead.id}`}
+                                                        className="text-xs font-medium text-slate-800 hover:text-blue-600 truncate block"
+                                                        title={companyName}
+                                                    >
+                                                        {truncatedName}
+                                                    </Link>
+                                                </td>
+                                                <td className="px-3 py-2 text-sm text-slate-600 whitespace-nowrap truncate">
+                                                    {lead.business_type || '-'}
+                                                </td>
+                                                <td className="px-3 py-2 text-sm text-slate-600 whitespace-nowrap truncate">
+                                                    {lead.city || '-'} {lead.district ? `/ ${lead.district}` : ''}
+                                                </td>
+                                                <td className="px-3 py-2 text-sm text-slate-600 whitespace-nowrap truncate">
+                                                    {lead.primaryGroup?.name || lead.groups?.[0]?.name || '-'}
+                                                </td>
+                                                <td className="px-3 py-2 text-sm text-slate-500 whitespace-nowrap">
+                                                    {lead.updated_at ? formatDate(lead.updated_at) : formatDate(lead.created_at)}
+                                                </td>
+                                                <td className="px-3 py-2 whitespace-nowrap">
+                                                    <Link
+                                                        href={`/leads/${lead.id}`}
+                                                        className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                                    >
+                                                        <Eye size={14} />
+                                                        <span>Görüntüle</span>
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {/* Loading indicator at the bottom */}
+                                    {isLoadingMore && (
+                                        <tr>
+                                            <td colSpan="6" className="px-3 py-4 text-center">
+                                                <div className="flex items-center justify-center gap-2 text-slate-500">
+                                                    <Loader2 size={18} className="animate-spin" />
+                                                    <span className="text-xs">Müşteriler yükleniyor...</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                    {/* Observer target for infinite scroll */}
+                                    {hasMore && !isLoadingMore && (
+                                        <tr ref={observerTarget}>
+                                            <td colSpan="6" className="h-1"></td>
+                                        </tr>
+                                    )}
+                                    {/* End of list message */}
+                                    {!hasMore && leads.length > 0 && (
+                                        <tr>
+                                            <td colSpan="6" className="px-3 py-3 text-center text-slate-500 text-xs">
+                                                Müşteri yüklenemedi
+                                            </td>
+                                        </tr>
+                                    )}
+                                </>
                             )}
                         </tbody>
                     </table>

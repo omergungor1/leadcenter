@@ -352,31 +352,31 @@ export default function Dashboard() {
 
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
+            <h1 className="text-3xl font-bold text-slate-800">Panel</h1>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     icon={User}
-                    label="Total Leads"
+                    label="Toplam Müşteri"
                     value={stats.totalLeads}
                     color="blue"
                 />
                 <StatCard
                     icon={Users}
-                    label="Total Lead Groups"
+                    label="Toplam Müşteri Grubu"
                     value={stats.totalLeadGroups}
                     color="green"
                 />
                 <StatCard
                     icon={Megaphone}
-                    label="Active Campaigns"
+                    label="Aktif Kampanya"
                     value={stats.activeCampaigns}
                     color="purple"
                 />
                 <StatCard
                     icon={CheckSquare}
-                    label="Tasks Due Today"
+                    label="Bugünün Görevleri"
                     value={stats.tasksDueToday}
                     color="orange"
                 />
@@ -386,16 +386,16 @@ export default function Dashboard() {
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h2 className="text-xl font-semibold text-slate-800">Daily Campaign Goals</h2>
+                        <h2 className="text-xl font-semibold text-slate-800">Günlük Kampanya Hedefleri</h2>
                         <p className="text-sm text-slate-500 mt-1">
-                            Today's progress towards daily campaign targets
+                            Bugünün kampanya hedeflerine ilerleme
                         </p>
                     </div>
                     <Link
                         href="/settings"
                         className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
                     >
-                        Manage Limits
+                        Limitleri Yönet
                         <ArrowRight size={16} />
                     </Link>
                 </div>
@@ -411,7 +411,7 @@ export default function Dashboard() {
                     />
                     <DailyGoalCard
                         icon={Phone}
-                        label="Call"
+                        label="Arama"
                         goal={dailyLimits.call}
                         completed={dailyGoals.call.completed}
                         remaining={dailyGoals.call.remaining}
@@ -420,7 +420,7 @@ export default function Dashboard() {
                     />
                     <DailyGoalCard
                         icon={Mail}
-                        label="Email"
+                        label="E-posta"
                         goal={dailyLimits.email}
                         completed={dailyGoals.email.completed}
                         remaining={dailyGoals.email.remaining}
@@ -429,7 +429,7 @@ export default function Dashboard() {
                     />
                     <DailyGoalCard
                         icon={MapPin}
-                        label="Visit"
+                        label="Ziyaret"
                         goal={dailyLimits.visit}
                         completed={dailyGoals.visit.completed}
                         remaining={dailyGoals.visit.remaining}
@@ -443,22 +443,22 @@ export default function Dashboard() {
                 {/* Today's Tasks */}
                 <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex flex-col h-100">
                     <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                        <h2 className="text-xl font-semibold text-slate-800">Today's Tasks</h2>
+                        <h2 className="text-xl font-semibold text-slate-800">Bugünün Görevleri</h2>
                         <Link
                             href="/tasks"
                             className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
                         >
-                            View all
+                            Tümünü Gör
                             <ArrowRight size={16} />
                         </Link>
                     </div>
                     <div className="space-y-3 flex-1 overflow-y-auto min-h-0">
                         {isLoadingTasks ? (
-                            <p className="text-slate-500 text-center py-4">Loading tasks...</p>
+                            <p className="text-slate-500 text-center py-4">Görevler yükleniyor...</p>
                         ) : todayTasks.length > 0 ? (
                             todayTasks.map((task) => {
                                 const lead = leadsMap[task.lead_id];
-                                const leadName = lead ? (lead.company || lead.name || 'Unknown Lead') : 'No Lead';
+                                const leadName = lead ? (lead.company || lead.name || 'Bilinmeyen Müşteri') : 'Müşteri Yok';
                                 return (
                                     <div
                                         key={task.id}
@@ -479,14 +479,14 @@ export default function Dashboard() {
                                             <span
                                                 className={`px-2 py-1 rounded-lg text-xs font-medium ${getStatusColor(task.status)}`}
                                             >
-                                                {getStatusLabel(task.status)}
+                                                {task.status == 'pending' ? 'Beklemede' : task.status == 'completed' ? 'Tamamlandı' : 'İptal Edildi'}
                                             </span>
                                         </div>
                                     </div>
                                 );
                             })
                         ) : (
-                            <p className="text-slate-500 text-center py-4">No tasks due today</p>
+                            <p className="text-slate-500 text-center py-4">Bugünün görevleri yok</p>
                         )}
                     </div>
                 </div>
@@ -494,12 +494,12 @@ export default function Dashboard() {
                 {/* Latest Lead Groups */}
                 <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex flex-col h-100">
                     <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                        <h2 className="text-xl font-semibold text-slate-800">Latest Lead Groups</h2>
+                        <h2 className="text-xl font-semibold text-slate-800">Son Müşteri Grupları</h2>
                         <Link
                             href="/lead-groups"
                             className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
                         >
-                            View all
+                            Tümünü Gör
                             <ArrowRight size={16} />
                         </Link>
                     </div>
@@ -507,10 +507,10 @@ export default function Dashboard() {
                         <table className="w-full">
                             <thead>
                                 <tr className="text-left text-sm text-slate-500 border-b border-slate-200">
-                                    <th className="pb-3">Group Name</th>
-                                    <th className="pb-3">Status</th>
-                                    <th className="pb-3">Leads</th>
-                                    <th className="pb-3">Updated</th>
+                                    <th className="pb-3">Grup Adı</th>
+                                    <th className="pb-3">Durum</th>
+                                    <th className="pb-3">Müşteriler</th>
+                                    <th className="pb-3">Güncellendi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -527,7 +527,7 @@ export default function Dashboard() {
                                             </td>
                                             <td className="py-3">
                                                 <span className="px-2 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-700">
-                                                    Active
+                                                    Aktif
                                                 </span>
                                             </td>
                                             <td className="py-3 text-slate-600">{group.leadCount || 0}</td>
@@ -539,7 +539,7 @@ export default function Dashboard() {
                                 ) : (
                                     <tr>
                                         <td colSpan="4" className="py-4 text-center text-slate-500">
-                                            No lead groups yet
+                                            Müşteri grupları yok
                                         </td>
                                     </tr>
                                 )}
@@ -552,12 +552,12 @@ export default function Dashboard() {
             {/* Ongoing Campaigns */}
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-slate-800">Ongoing Campaigns</h2>
+                    <h2 className="text-xl font-semibold text-slate-800">Aktif Kampanyalar</h2>
                     <Link
                         href="/campaigns"
                         className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
                     >
-                        View all
+                        Tümünü Gör
                         <ArrowRight size={16} />
                     </Link>
                 </div>
@@ -600,7 +600,7 @@ export default function Dashboard() {
                             );
                         })
                     ) : (
-                        <p className="text-slate-500 text-center py-4">No active campaigns</p>
+                        <p className="text-slate-500 text-center py-4">Aktif kampanya yok</p>
                     )}
                 </div>
             </div>
@@ -649,7 +649,7 @@ function DailyGoalCard({ icon: Icon, label, goal, completed, remaining, percenta
                 </div>
                 <div className="flex-1">
                     <h3 className="font-semibold text-slate-800">{label}</h3>
-                    <p className="text-xs text-slate-500">Daily Goal: {goal}</p>
+                    <p className="text-xs text-slate-500">Günlük Hedef: {goal}</p>
                 </div>
             </div>
             <div className="mb-3">
@@ -667,7 +667,7 @@ function DailyGoalCard({ icon: Icon, label, goal, completed, remaining, percenta
                 </div>
             </div>
             <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500">Remaining:</span>
+                <span className="text-slate-500">Kalan:</span>
                 <span className="font-medium text-slate-700">{remaining}</span>
             </div>
         </div>

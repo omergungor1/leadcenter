@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Download, ArrowLeft, ChevronDown, FileText, Contact } from 'lucide-react';
+import { Download, ArrowLeft, ChevronDown, FileText, Contact, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { formatDate } from '../../utils/formatDate';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
@@ -143,8 +143,7 @@ export default function LeadGroupDetail({ id }) {
                     setGroupActivities([]);
                 }
             } catch (error) {
-                console.error('Error:', error);
-                toast.error('An error occurred while loading data');
+                toast.error('Veri yüklenirken bir hata oluştu. Hata kodu: ' + error.code);
             } finally {
                 setIsLoading(false);
             }
@@ -186,12 +185,12 @@ export default function LeadGroupDetail({ id }) {
 
     const handleExportCSV = () => {
         // Mock: Export to CSV
-        alert(`Exporting group ${id} to CSV... (Mock)`);
+        toast.success('Müşteri grubu CSV olarak dışa aktarılıyor... (Mock)');
     };
 
     const handleExportVCF = () => {
         // Mock: Export to VCF
-        alert(`Exporting group ${id} to VCF... (Mock)`);
+        toast.success('Müşteri grubu VCF olarak dışa aktarılıyor... (Mock)');
     };
 
     return (
@@ -217,11 +216,15 @@ export default function LeadGroupDetail({ id }) {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    <Button variant="outline" size="default" className="focus-visible:outline-none focus-visible:ring-0">
+                        <Plus size={18} />
+                        <span>Müşteri Ekle</span>
+                    </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="default" className="focus-visible:outline-none focus-visible:ring-0">
                                 <Download size={18} />
-                                <span>Export</span>
+                                <span>İndir</span>
                                 <ChevronDown size={14} />
                             </Button>
                         </DropdownMenuTrigger>
@@ -231,14 +234,14 @@ export default function LeadGroupDetail({ id }) {
                                 className="cursor-pointer"
                             >
                                 <FileText className="mr-2 h-4 w-4" />
-                                <span>Export .csv</span>
+                                <span>İndir (.csv)</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
                                 onClick={handleExportVCF}
                                 className="cursor-pointer"
                             >
                                 <Contact className="mr-2 h-4 w-4" />
-                                <span>Export .vcf</span>
+                                <span>İndir (.vcf)</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -248,7 +251,7 @@ export default function LeadGroupDetail({ id }) {
             {/* Tabs */}
             <div className="border-b border-slate-200">
                 <nav className="flex space-x-8">
-                    {['leads', 'notes', 'history'].map((tab) => (
+                    {['müşteriler', 'notlar', 'geçmiş'].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -271,19 +274,19 @@ export default function LeadGroupDetail({ id }) {
                             <thead className="bg-slate-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                        Company Name
+                                        Firma Adı
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                        Category
+                                        Kategori
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                        Phone
+                                        Telefon
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                        Email
+                                        E-posta
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                        Actions
+                                        İşlemler
                                     </th>
                                 </tr>
                             </thead>
@@ -309,7 +312,7 @@ export default function LeadGroupDetail({ id }) {
                                                     href={`/leads/${lead.id}`}
                                                     className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                                                 >
-                                                    View
+                                                    Görüntüle
                                                 </Link>
                                             </td>
                                         </tr>
@@ -317,7 +320,7 @@ export default function LeadGroupDetail({ id }) {
                                 ) : (
                                     <tr>
                                         <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
-                                            No leads in this group
+                                            Bu grupta müşteri yok
                                         </td>
                                     </tr>
                                 )}
@@ -330,10 +333,10 @@ export default function LeadGroupDetail({ id }) {
                     <div className="p-6">
                         <div className="space-y-4">
                             <div className="p-4 bg-slate-50 rounded-xl">
-                                <p className="text-slate-800 font-medium mb-1">Group Notes</p>
+                                <p className="text-slate-800 font-medium mb-1">Grup Notları</p>
                                 <p className="text-slate-600 text-sm">{group.order_note || 'No notes available'}</p>
                                 <p className="text-xs text-slate-400 mt-2">
-                                    Created: {formatDate(group.created_at)}
+                                    Oluşturulma Tarihi: {formatDate(group.created_at)}
                                 </p>
                             </div>
                         </div>
@@ -354,7 +357,7 @@ export default function LeadGroupDetail({ id }) {
                                                 {formatDate(activity.created_at)}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-slate-600">{activity.content || 'No content'}</p>
+                                        <p className="text-sm text-slate-600">{activity.content || 'İçerik yok'}</p>
                                         {activity.status && (
                                             <span className={`inline-block mt-2 px-2 py-1 rounded text-xs font-medium ${activity.status === 'completed'
                                                 ? 'bg-green-100 text-green-700'
@@ -368,7 +371,7 @@ export default function LeadGroupDetail({ id }) {
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-slate-500 text-center py-8">No history available</p>
+                                <p className="text-slate-500 text-center py-8">Geçmiş kaydı yok</p>
                             )}
                         </div>
                     </div>

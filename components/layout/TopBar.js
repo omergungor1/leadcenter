@@ -221,7 +221,7 @@ export default function TopBar() {
                         <input
                             data-search-input
                             type="text"
-                            placeholder="Search leads..."
+                            placeholder="Müşterileri ara..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={() => {
@@ -238,7 +238,7 @@ export default function TopBar() {
                                 {isSearching ? (
                                     <div className="p-4 text-center text-slate-500">
                                         <Loader2 size={16} className="animate-spin mx-auto mb-2" />
-                                        <span className="text-sm">Searching...</span>
+                                        <span className="text-sm">Aranıyor...</span>
                                     </div>
                                 ) : searchResults.length > 0 ? (
                                     <div className="divide-y divide-slate-200">
@@ -263,7 +263,7 @@ export default function TopBar() {
                                     </div>
                                 ) : (
                                     <div className="p-4 text-center text-slate-500 text-sm">
-                                        No leads found
+                                        Müşteri bulunamadı
                                     </div>
                                 )}
                             </div>
@@ -278,7 +278,7 @@ export default function TopBar() {
                             className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium"
                         >
                             <Plus size={18} />
-                            <span>Create</span>
+                            <span>Oluştur</span>
                         </button> */}
 
                         {/* Notifications */}
@@ -327,7 +327,7 @@ export default function TopBar() {
                                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-20">
                                         <div className="px-4 py-2 border-b border-slate-200">
                                             <p className="text-sm font-medium text-slate-800">
-                                                {user?.email.substring(0, 20) || 'User'}
+                                                {user?.email.substring(0, 20) || 'Kullanıcı'}
                                             </p>
                                         </div>
                                         <button
@@ -335,7 +335,7 @@ export default function TopBar() {
                                             className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                                         >
                                             <LogOut size={16} />
-                                            <span>Sign Out</span>
+                                            <span>Çıkış Yap</span>
                                         </button>
                                     </div>
                                 </>

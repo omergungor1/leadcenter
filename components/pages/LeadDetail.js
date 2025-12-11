@@ -89,7 +89,7 @@ export default function LeadDetail({ id }) {
 
             // Update local state
             setLead({ ...lead, is_favorite: newFavoriteStatus });
-            toast.success(newFavoriteStatus ? 'Added to favorites' : 'Removed from favorites');
+            toast.success(newFavoriteStatus ? 'Favorilere eklendi' : 'Favorilerden çıkarıldı');
         } catch (error) {
             console.error('Error:', error);
             toast.error('An error occurred');

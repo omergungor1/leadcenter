@@ -18,17 +18,17 @@ export default function CreateLeadGroupModal({ userId, onClose, onSuccess }) {
         e.preventDefault();
 
         if (!formData.name.trim()) {
-            toast.error('Group name is required');
+            toast.error('Müşteri grubu adı gereklidir');
             return;
         }
 
         if (groupType === 'order') {
             if (!formData.keyword.trim()) {
-                toast.error('Keyword is required for Lead Order');
+                toast.error('Arama terimi gereklidir');
                 return;
             }
             if (!formData.order_note.trim()) {
-                toast.error('Order note is required for Lead Order');
+                toast.error('Müşteri grubu notu gereklidir');
                 return;
             }
         }
@@ -54,20 +54,20 @@ export default function CreateLeadGroupModal({ userId, onClose, onSuccess }) {
             const { data, error } = await insert('lead_groups', groupData);
 
             if (error) {
-                toast.error('Error creating lead group: ' + error.message);
+                toast.error('Müşteri grubu oluşturulurken hata oluştu: ' + error.message);
                 return;
             }
 
             toast.success(
                 groupType === 'order'
-                    ? 'Lead order created successfully!'
-                    : 'Custom group created successfully!'
+                    ? 'Müşteri siparişi başarıyla oluşturuldu!'
+                    : 'Özel grup başarıyla oluşturuldu!'
             );
             onSuccess?.();
             onClose();
         } catch (error) {
             console.error('Error:', error);
-            toast.error('An error occurred. Please try again.');
+            toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
         } finally {
             setIsSaving(false);
         }
@@ -93,7 +93,7 @@ export default function CreateLeadGroupModal({ userId, onClose, onSuccess }) {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-semibold text-slate-800">Create Lead Group</h3>
+                    <h3 className="text-xl font-semibold text-slate-800">Müşteri Grubu Oluştur</h3>
                     <button
                         onClick={handleClose}
                         className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
@@ -106,7 +106,7 @@ export default function CreateLeadGroupModal({ userId, onClose, onSuccess }) {
                     // Group Type Selection
                     <div className="space-y-4">
                         <p className="text-sm text-slate-600 mb-4">
-                            Choose the type of lead group you want to create:
+                            Oluşturmak istediğiniz müşteri grubu türünü seçiniz:
                         </p>
 
                         <button
@@ -118,9 +118,9 @@ export default function CreateLeadGroupModal({ userId, onClose, onSuccess }) {
                                     <Package size={24} className="text-blue-600" />
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="font-semibold text-slate-800 mb-1">Lead Order</h4>
+                                    <h4 className="font-semibold text-slate-800 mb-1">Müşteri Siparişi</h4>
                                     <p className="text-sm text-slate-600">
-                                        Create a data order request. Specify which businesses you want to collect from which cities/districts.
+                                        Müşteri siparişi oluşturun. Hangi şehirlerdeki hangi işletmeleri toplamak istediğinizi belirtiniz.
                                     </p>
                                 </div>
                             </div>
@@ -135,9 +135,9 @@ export default function CreateLeadGroupModal({ userId, onClose, onSuccess }) {
                                     <FolderPlus size={24} className="text-green-600" />
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="font-semibold text-slate-800 mb-1">Custom Group</h4>
+                                    <h4 className="font-semibold text-slate-800 mb-1">Özel Grup</h4>
                                     <p className="text-sm text-slate-600">
-                                        Create an empty lead group that you can manually add leads to.
+                                        Boş bir müşteri grubu oluşturun. Müşterileri manuel olarak ekleyebilirsiniz.
                                     </p>
                                 </div>
                             </div>
@@ -148,14 +148,14 @@ export default function CreateLeadGroupModal({ userId, onClose, onSuccess }) {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Lead Group Name <span className="text-red-500">*</span>
+                                Müşteri Grubu Adı <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="e.g., İstanbul Kuaförler"
+                                placeholder="Örneğin: İstanbul Kuaförler"
                                 required
                             />
                         </div>
@@ -164,7 +164,7 @@ export default function CreateLeadGroupModal({ userId, onClose, onSuccess }) {
                             <>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                                        Keyword <span className="text-red-500">*</span>
+                                        Arama Terimi <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -173,14 +173,14 @@ export default function CreateLeadGroupModal({ userId, onClose, onSuccess }) {
                                             setFormData({ ...formData, keyword: e.target.value })
                                         }
                                         className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="e.g., kuaför, berber, eczane"
+                                        placeholder="Örneğin: kuaför, berber, eczane"
                                         required
                                     />
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                                        Order Note <span className="text-red-500">*</span>
+                                        Müşteri Grubu Notu <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
                                         value={formData.order_note}
@@ -202,21 +202,21 @@ export default function CreateLeadGroupModal({ userId, onClose, onSuccess }) {
                                 onClick={() => setGroupType(null)}
                                 className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
                             >
-                                Back
+                                Geri
                             </button>
                             <button
                                 type="button"
                                 onClick={handleClose}
                                 className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
                             >
-                                Cancel
+                                İptal
                             </button>
                             <button
                                 type="submit"
                                 disabled={isSaving}
                                 className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {isSaving ? 'Creating...' : 'Create Group'}
+                                {isSaving ? 'Oluşturuluyor...' : 'Oluştur'}
                             </button>
                         </div>
                     </form>

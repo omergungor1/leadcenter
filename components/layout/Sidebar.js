@@ -19,18 +19,18 @@ import {
 } from 'lucide-react';
 
 const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-    { icon: Users, label: 'Lead Groups', path: '/lead-groups' },
-    { icon: User, label: 'Leads', path: '/leads' },
-    { icon: Megaphone, label: 'Campaigns', path: '/campaigns' },
-    { icon: CheckSquare, label: 'Tasks', path: '/tasks' },
-    { icon: Heart, label: 'Favorites', path: '/favorites' },
+    { icon: LayoutDashboard, label: 'Panel', path: '/' },
+    { icon: Users, label: 'Müşteri Grupları', path: '/lead-groups' },
+    { icon: User, label: 'Müşteriler', path: '/leads' },
+    { icon: Megaphone, label: 'Kampanyalar', path: '/campaigns' },
+    { icon: CheckSquare, label: 'Görevler', path: '/tasks' },
+    { icon: Heart, label: 'Favoriler', path: '/favorites' },
 ];
 
 const bottomMenuItems = [
-    { icon: Settings, label: 'Settings', path: '/settings' },
-    { icon: UserCircle, label: 'Profile', path: '/profile' },
-    { icon: CreditCard, label: 'Account', path: '/account' },
+    { icon: Settings, label: 'Ayarlar', path: '/settings' },
+    { icon: UserCircle, label: 'Profil', path: '/profile' },
+    { icon: CreditCard, label: 'Hesap', path: '/account' },
 ];
 
 export default function Sidebar({ onCollapseChange }) {
@@ -68,12 +68,12 @@ export default function Sidebar({ onCollapseChange }) {
                                 height={32}
                                 className="rounded-lg"
                             />
-                            <span className="font-semibold text-slate-800">Lead Center</span>
+                            <span className="font-semibold text-slate-800">Veri Burada</span>
                         </div>
                     ) : (
                         <Image
                             src="/logo.png"
-                            alt="Lead Center Logo"
+                            alt="Veri Burada Logo"
                             width={32}
                             height={32}
                             className="rounded-lg mx-auto"

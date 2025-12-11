@@ -102,6 +102,8 @@ CREATE TABLE lead_groups (
     ordered_at TIMESTAMP,
     completed_at TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );

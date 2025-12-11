@@ -74,7 +74,7 @@ export default function TasksList() {
                     .order('due_date', { ascending: true });
 
                 if (error) {
-                    toast.error('Error loading tasks: ' + error.message);
+                    toast.error('Görevler yüklenirken hata oluştu: ' + error.message);
                     return;
                 }
 
@@ -101,7 +101,7 @@ export default function TasksList() {
                 }
             } catch (error) {
                 console.error('Error:', error);
-                toast.error('An error occurred while loading tasks');
+                toast.error('Görevler yüklenirken hata oluştu');
             } finally {
                 setIsLoading(false);
             }
@@ -117,14 +117,14 @@ export default function TasksList() {
     const getActivityTypeLabel = (type) => {
         if (!type) return '-';
         const labels = {
-            note: 'Note',
+            note: 'Not',
             email: 'Email',
             call: 'Call',
             whatsapp: 'WhatsApp',
-            follow_up: 'Follow Up',
-            visit: 'Visit',
-            meeting: 'Meeting',
-            todo: 'Todo',
+            follow_up: 'Takip',
+            visit: 'Ziyaret',
+            meeting: 'Toplantı',
+            todo: 'Görev',
         };
         return labels[type] || type.charAt(0).toUpperCase() + type.slice(1);
     };
@@ -183,11 +183,11 @@ export default function TasksList() {
         // Validate follow-up if enabled
         if (hasFollowUp) {
             if (!followUpData.content.trim()) {
-                toast.error('Follow-up description is required');
+                toast.error('Takip notu gereklidir');
                 return;
             }
             if (!followUpData.due_date) {
-                toast.error('Follow-up date is required');
+                toast.error('Takip tarihi gereklidir');
                 return;
             }
         }
@@ -208,7 +208,7 @@ export default function TasksList() {
             });
 
             if (error) {
-                toast.error('Error completing task: ' + error.message);
+                toast.error('Görev tamamlanırken hata oluştu: ' + error.message);
                 return;
             }
 
@@ -234,7 +234,7 @@ export default function TasksList() {
                 }
             }
 
-            toast.success('Task completed successfully!');
+            toast.success('Görev başarıyla tamamlandı!');
 
             // Update local state
             setTasks((prev) =>
@@ -261,14 +261,14 @@ export default function TasksList() {
             });
         } catch (error) {
             console.error('Error:', error);
-            toast.error('An error occurred');
+            toast.error('Bir hata oluştu');
         }
     };
 
     if (authLoading || isLoading) {
         return (
             <div className="p-6 flex items-center justify-center h-full">
-                <div className="text-slate-500">Loading...</div>
+                <div className="text-slate-500">Yükleniyor...</div>
             </div>
         );
     }
@@ -276,14 +276,14 @@ export default function TasksList() {
     return (
         <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-slate-800">Tasks</h1>
+                <h1 className="text-3xl font-bold text-slate-800">Görevler</h1>
             </div>
 
             {/* Filters */}
             <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                     <Filter size={18} className="text-slate-500" />
-                    <span className="font-medium text-slate-700">Filters</span>
+                    <span className="font-medium text-slate-700">Filtreler</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <select
@@ -291,22 +291,22 @@ export default function TasksList() {
                         onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                         className="px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                        <option value="">All Statuses</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Completed">Completed</option>
+                        <option value="">Tüm Durumlar</option>
+                        <option value="Pending">Beklemede</option>
+                        <option value="Completed">Tamamlandı</option>
                     </select>
                     <select
                         value={filters.type}
                         onChange={(e) => setFilters({ ...filters, type: e.target.value })}
                         className="px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                        <option value="">All Types</option>
-                        <option value="Call">Call</option>
-                        <option value="Email">Email</option>
-                        <option value="Follow Up">Follow Up</option>
-                        <option value="Visit">Visit</option>
-                        <option value="Meeting">Meeting</option>
-                        <option value="Todo">Todo</option>
+                        <option value="">Tüm Türler</option>
+                        <option value="Call">Telefon</option>
+                        <option value="Email">E-posta</option>
+                        <option value="Follow Up">Takip</option>
+                        <option value="Visit">Ziyaret</option>
+                        <option value="Meeting">Toplantı</option>
+                        <option value="Todo">Görev</option>
                         <option value="WhatsApp">WhatsApp</option>
                     </select>
                     <label className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50">
@@ -316,7 +316,7 @@ export default function TasksList() {
                             onChange={(e) => setFilters({ ...filters, dueToday: e.target.checked })}
                             className="rounded"
                         />
-                        <span className="text-sm">Due Today</span>
+                        <span className="text-sm">Bugüne Kadar</span>
                     </label>
                     <label className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50">
                         <input
@@ -325,7 +325,7 @@ export default function TasksList() {
                             onChange={(e) => setFilters({ ...filters, overdue: e.target.checked })}
                             className="rounded"
                         />
-                        <span className="text-sm">Overdue</span>
+                        <span className="text-sm">Geçmiş</span>
                     </label>
                     <button
                         onClick={() =>
@@ -333,7 +333,7 @@ export default function TasksList() {
                         }
                         className="px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
                     >
-                        Reset Filters
+                        Filtreleri Temizle
                     </button>
                 </div>
             </div>
@@ -345,22 +345,22 @@ export default function TasksList() {
                         <thead className="bg-slate-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Task Content
+                                    Görev İçeriği
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Related Lead
+                                    İlişkili Müşteri
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Due Date
+                                    Bitiş Tarihi
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Status
+                                    Durum
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Type
+                                    Tür
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Actions
+                                    İşlemler
                                 </th>
                             </tr>
                         </thead>
@@ -377,7 +377,7 @@ export default function TasksList() {
                                         <tr key={task.id} className="hover:bg-slate-50">
                                             <td className="px-6 py-4">
                                                 <p className="font-medium text-slate-800 max-w-md truncate">
-                                                    {task.content || 'No description'}
+                                                    {task.content || 'Açıklama yok'}
                                                 </p>
                                             </td>
                                             <td className="px-6 py-4">
@@ -386,10 +386,10 @@ export default function TasksList() {
                                                         href={`/leads/${task.lead_id}`}
                                                         className="text-blue-600 hover:text-blue-800"
                                                     >
-                                                        {lead.company || lead.name || 'Unknown Lead'}
+                                                        {lead.company || lead.name || 'İlişkili Müşteri Yok'}
                                                     </Link>
                                                 ) : (
-                                                    <span className="text-slate-400">Loading...</span>
+                                                    <span className="text-slate-400">Yükleniyor...</span>
                                                 )}
                                             </td>
                                             <td className="px-6 py-4">
@@ -403,7 +403,7 @@ export default function TasksList() {
                                                         task.status
                                                     )}`}
                                                 >
-                                                    {task.status === 'pending' ? 'Pending' : 'Completed'}
+                                                    {task.status === 'pending' ? 'Beklemede' : 'Tamamlandı'}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-slate-600">
@@ -417,7 +417,7 @@ export default function TasksList() {
                                                             className="text-green-600 hover:text-green-800 flex items-center gap-1"
                                                         >
                                                             <CheckCircle size={16} />
-                                                            Complete
+                                                            Tamamla
                                                         </button>
                                                     )}
                                                     <Link
@@ -425,7 +425,7 @@ export default function TasksList() {
                                                         className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
                                                     >
                                                         <Eye size={16} />
-                                                        View
+                                                        Görüntüle
                                                     </Link>
                                                 </div>
                                             </td>
@@ -435,7 +435,7 @@ export default function TasksList() {
                             ) : (
                                 <tr>
                                     <td colSpan="6" className="px-6 py-8 text-center text-slate-500">
-                                        No tasks found
+                                        Görev bulunamadı
                                     </td>
                                 </tr>
                             )}
@@ -449,7 +449,7 @@ export default function TasksList() {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-slate-800">Complete Task</h3>
+                            <h3 className="text-lg font-semibold text-slate-800">Görev Tamamla</h3>
                             <button
                                 onClick={() => {
                                     setCompletingTask(null);
@@ -469,14 +469,14 @@ export default function TasksList() {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Completion Note
+                                    Tamamlama Notu
                                 </label>
                                 <textarea
                                     value={completionNote}
                                     onChange={(e) => setCompletionNote(e.target.value)}
                                     className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                     rows={4}
-                                    placeholder="Enter completion notes (optional)..."
+                                    placeholder="Tamamlama notu (isteğe bağlı)..."
                                 />
                             </div>
 
@@ -489,28 +489,28 @@ export default function TasksList() {
                                         onChange={(e) => setHasFollowUp(e.target.checked)}
                                         className="rounded"
                                     />
-                                    <span className="text-sm font-medium text-slate-700">Add Follow-up</span>
+                                    <span className="text-sm font-medium text-slate-700">Takip Ekle</span>
                                 </label>
 
                                 {hasFollowUp && (
                                     <div className="space-y-3 pl-6 border-l-2 border-blue-200">
                                         <div>
                                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                                Follow-up Description <span className="text-red-500">*</span>
+                                                Takip Açıklaması <span className="text-red-500">*</span>
                                             </label>
                                             <textarea
                                                 value={followUpData.content}
                                                 onChange={(e) => setFollowUpData({ ...followUpData, content: e.target.value })}
                                                 className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                                 rows={3}
-                                                placeholder="Enter follow-up description..."
+                                                placeholder="Takip açıklaması..."
                                                 required
                                             />
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
                                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                                    Follow-up Date <span className="text-red-500">*</span>
+                                                    Takip Tarihi <span className="text-red-500">*</span>
                                                 </label>
                                                 <input
                                                     type="date"
@@ -522,7 +522,7 @@ export default function TasksList() {
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                                    Follow-up Time <span className="text-red-500">*</span>
+                                                    Takip Saati <span className="text-red-500">*</span>
                                                 </label>
                                                 <input
                                                     type="time"
@@ -551,13 +551,13 @@ export default function TasksList() {
                                     }}
                                     className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
                                 >
-                                    Cancel
+                                    İptal
                                 </button>
                                 <button
                                     onClick={handleCompleteTask}
                                     className="flex-1 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors font-medium"
                                 >
-                                    Complete Task
+                                    Görevi Tamamla
                                 </button>
                             </div>
                         </div>
