@@ -659,7 +659,6 @@ export default function LeadsList({ favoritesOnly = false }) {
                                                         className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
                                                     >
                                                         <Eye size={14} />
-                                                        <span>Görüntüle</span>
                                                     </Link>
                                                 </td>
                                             </tr>

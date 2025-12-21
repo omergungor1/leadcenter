@@ -37,6 +37,7 @@ import { useAuth } from '@/lib/supabase/hooks';
 import { fetchById, fetchAll, updateById, insert, deleteById } from '@/lib/supabase/database';
 import { supabase } from '@/lib/supabase/client';
 import { useEffect } from 'react';
+import EditLeadModal from '../modals/EditLeadModal';
 import QuickActionPanel from '../modals/QuickActionPanel';
 
 export default function LeadDetail({ id }) {
@@ -62,6 +63,7 @@ export default function LeadDetail({ id }) {
     const [editingActivity, setEditingActivity] = useState(null);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmAction, setConfirmAction] = useState(null);
+    const [showEditLeadModal, setShowEditLeadModal] = useState(false);
 
     // Get today's day name in Turkish
     const getTodayInTurkish = () => {
@@ -520,229 +522,235 @@ export default function LeadDetail({ id }) {
         <div className="h-full flex flex-col overflow-hidden p-6">
             <div className="flex-1 grid grid-cols-12 gap-6 overflow-hidden min-h-0">
                 {/* Left Column - Info Panel */}
-                <div className="col-span-12 lg:col-span-3 space-y-4 overflow-hidden">
-                    {/* Company Info */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        {/* Company Image */}
-                        {lead.profile_image_url && (
-                            <div className="w-full h-48 relative">
-                                <button
-                                    onClick={() => setShowImageModal(true)}
-                                    className="w-full h-full cursor-pointer hover:opacity-90 transition-opacity"
-                                >
-                                    <Image
-                                        src={lead.profile_image_url}
-                                        alt={lead.company || lead.name || 'Company'}
-                                        fill
-                                        className="object-cover"
-                                        sizes="100vw"
-                                    />
-                                </button>
-                                {/* Favorite Button - Top Right Corner */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleToggleFavorite();
-                                    }}
-                                    className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-lg hover:bg-slate-50 transition-colors z-10"
-                                    title={lead.is_favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
-                                >
-                                    <Heart
-                                        size={20}
-                                        className={lead.is_favorite ? 'text-red-500 fill-red-500' : 'text-slate-400'}
-                                    />
-                                </button>
-                                <button
-                                    onClick={() => router.back()}
-                                    className="absolute top-3 left-3 p-2 bg-white rounded-full shadow-lg hover:bg-slate-50 transition-colors z-10"
-                                >
-                                    <ChevronLeft size={20} />
-                                </button>
-                            </div>
-                        )}
-
-                        <div className="p-6">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex-1">
-                                    <h2 className="text-xl font-semibold text-slate-800 mb-2">
-                                        {lead.company || lead.name}
-                                    </h2>
-
-                                    {/* Rating and Review Count */}
-                                    {(lead.rating || lead.review_count) && (
-                                        <div className="flex items-center gap-2">
-                                            {lead.rating && (
-                                                <div className="flex items-center gap-1">
-                                                    <Star size={16} className="text-yellow-500 fill-yellow-500" />
-                                                    <span className="text-sm font-medium text-slate-800">
-                                                        {lead.rating.toFixed(1)}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {lead.review_count && (
-                                                <span className="text-sm text-slate-500">
-                                                    ({lead.review_count} {lead.review_count === 1 ? 'görüş' : 'görüş'})
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                    {/* Favorite Button - Next to Edit */}
-                                    {!lead.profile_image_url && (
-                                        <button
-                                            onClick={handleToggleFavorite}
-                                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                                            title={lead.is_favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
-                                        >
-                                            <Heart
-                                                size={18}
-                                                className={lead.is_favorite ? 'text-red-500 fill-red-500' : 'text-slate-400'}
-                                            />
-                                        </button>
-                                    )}
-                                    <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                                        <Edit size={18} />
+                <div className="col-span-12 lg:col-span-3 flex flex-col min-h-0 overflow-hidden">
+                    <div className="space-y-4 overflow-y-auto overflow-x-hidden flex-1 min-h-0">
+                        {/* Company Info */}
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            {/* Company Image */}
+                            {lead.profile_image_url && (
+                                <div className="w-full h-48 relative">
+                                    <button
+                                        onClick={() => setShowImageModal(true)}
+                                        className="w-full h-full cursor-pointer hover:opacity-90 transition-opacity"
+                                    >
+                                        <Image
+                                            src={lead.profile_image_url}
+                                            alt={lead.company || lead.name || 'Company'}
+                                            fill
+                                            className="object-cover"
+                                            sizes="100vw"
+                                        />
+                                    </button>
+                                    {/* Favorite Button - Top Right Corner */}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleToggleFavorite();
+                                        }}
+                                        className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-lg hover:bg-slate-50 transition-colors z-10"
+                                        title={lead.is_favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+                                    >
+                                        <Heart
+                                            size={20}
+                                            className={lead.is_favorite ? 'text-red-500 fill-red-500' : 'text-slate-400'}
+                                        />
+                                    </button>
+                                    <button
+                                        onClick={() => router.back()}
+                                        className="absolute top-3 left-3 p-2 bg-white rounded-full shadow-lg hover:bg-slate-50 transition-colors z-10"
+                                    >
+                                        <ChevronLeft size={20} />
                                     </button>
                                 </div>
-                            </div>
+                            )}
 
-                            <div className="space-y-4">
-                                {lead.address && (
-                                    <div className="flex items-start gap-3">
-                                        <MapPin size={18} className="text-slate-400 mt-1" />
-                                        <div>
-                                            <p className="text-sm text-slate-500">Adres</p>
-                                            <p className="text-slate-800">{lead.address}</p>
-                                        </div>
-                                    </div>
-                                )}
+                            <div className="p-6">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex-1">
+                                        <h2 className="text-xl font-semibold text-slate-800 mb-2">
+                                            {lead.company || lead.name}
+                                        </h2>
 
-                                {leadPhones.length > 0 && (
-                                    <div className="flex items-start gap-3">
-                                        <Phone size={18} className="text-slate-400 mt-1" />
-                                        <div className="flex-1 space-y-2">
-                                            <p className="text-sm text-slate-500">Telefon{leadPhones.length > 1 ? 'lar' : ''}</p>
-                                            {leadPhones.map((phoneItem) => (
-                                                <div key={phoneItem.id} className="flex items-center gap-2 flex-wrap">
-                                                    <p className="text-slate-800">{formatPhoneNumber(phoneItem.phone)}</p>
-                                                    {phoneItem.source === 'map' && (
-                                                        <Map
-                                                            size={16}
-                                                            className="text-blue-500"
-                                                            title="Haritadan alındı"
-                                                        />
-                                                    )}
-                                                    {phoneItem.has_whatsapp && (
-                                                        <div className="flex items-center gap-1">
-                                                            <a
-                                                                href={`https://wa.me/${phoneItem.phone.replace(/\D/g, '')}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="relative group"
-                                                                title="WhatsApp ile mesaj gönderin"
-                                                            >
-                                                                <Image
-                                                                    src="/wp-icon.png"
-                                                                    alt="WhatsApp"
-                                                                    width={25}
-                                                                    height={25}
-                                                                    className="rounded cursor-pointer hover:opacity-80 transition-opacity"
-                                                                />
-                                                            </a>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {leadEmails.length > 0 && (
-                                    <div className="flex items-start gap-3">
-                                        <Mail size={18} className="text-slate-400 mt-1" />
-                                        <div className="flex-1 space-y-2">
-                                            <p className="text-sm text-slate-500">Email{leadEmails.length > 1 ? 'ler' : ''}</p>
-                                            {leadEmails.map((emailItem) => (
-                                                <p key={emailItem.id} className="text-slate-800">
-                                                    {emailItem.email}
-                                                </p>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {lead.website && (
-                                    <div className="flex items-start gap-3">
-                                        <Globe size={18} className="text-slate-400 mt-1" />
-                                        <div>
-                                            <p className="text-sm text-slate-500">Web Sitesi</p>
-                                            <a
-                                                href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-blue-600 hover:text-blue-800"
-                                            >
-                                                {lead.website}
-                                            </a>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {lead.google_maps_url && (
-                                    <a
-                                        href={lead.google_maps_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
-                                    >
-                                        <Map size={18} />
-                                        <span>Google Maps</span>
-                                    </a>
-                                )}
-
-                                {lead.working_hours && typeof lead.working_hours === 'object' && (
-                                    <div>
-                                        <button
-                                            onClick={() => setShowAllWorkingHours(!showAllWorkingHours)}
-                                            className="w-full flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
-                                        >
+                                        {/* Rating and Review Count */}
+                                        {(lead.rating || lead.review_count) && (
                                             <div className="flex items-center gap-2">
-                                                <Clock size={18} className="text-slate-400" />
-                                                <div className="text-left">
-                                                    <p className="text-sm font-medium text-slate-700">Çalışma Saatleri</p>
-                                                    <p className="text-xs text-slate-500">
-                                                        {todayInTurkish}: {lead.working_hours[todayInTurkish] || 'Bilinmiyor'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <span className="text-xs text-slate-400">
-                                                {showAllWorkingHours ? 'Gizle' : 'Tümünü Göster'}
-                                            </span>
-                                        </button>
-
-                                        {showAllWorkingHours && (
-                                            <div className="mt-2 space-y-2">
-                                                {Object.entries(lead.working_hours).map(([day, hours]) => (
-                                                    <div
-                                                        key={day}
-                                                        className={`flex items-center justify-between py-1.5 px-2 rounded-lg ${day === todayInTurkish
-                                                            ? 'bg-blue-50 border border-blue-200'
-                                                            : 'bg-slate-50'
-                                                            }`}
-                                                    >
-                                                        <span className={`text-sm ${day === todayInTurkish ? 'font-semibold text-blue-700' : 'text-slate-600'}`}>
-                                                            {day}
-                                                        </span>
-                                                        <span className={`text-sm ${day === todayInTurkish ? 'font-semibold text-blue-700' : 'font-medium text-slate-800'}`}>
-                                                            {hours}
+                                                {lead.rating && (
+                                                    <div className="flex items-center gap-1">
+                                                        <Star size={16} className="text-yellow-500 fill-yellow-500" />
+                                                        <span className="text-sm font-medium text-slate-800">
+                                                            {lead.rating.toFixed(1)}
                                                         </span>
                                                     </div>
-                                                ))}
+                                                )}
+                                                {lead.review_count && (
+                                                    <span className="text-sm text-slate-500">
+                                                        ({lead.review_count} {lead.review_count === 1 ? 'görüş' : 'görüş'})
+                                                    </span>
+                                                )}
                                             </div>
                                         )}
                                     </div>
-                                )}
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        {/* Favorite Button - Next to Edit */}
+                                        {!lead.profile_image_url && (
+                                            <button
+                                                onClick={handleToggleFavorite}
+                                                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                                                title={lead.is_favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+                                            >
+                                                <Heart
+                                                    size={18}
+                                                    className={lead.is_favorite ? 'text-red-500 fill-red-500' : 'text-slate-400'}
+                                                />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => setShowEditLeadModal(true)}
+                                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                                            title="Düzenle"
+                                        >
+                                            <Edit size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {lead.address && (
+                                        <div className="flex items-start gap-3">
+                                            <MapPin size={18} className="text-slate-400 mt-1" />
+                                            <div>
+                                                <p className="text-sm text-slate-500">Adres</p>
+                                                <p className="text-slate-800">{lead.address}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {leadPhones.length > 0 && (
+                                        <div className="flex items-start gap-3">
+                                            <Phone size={18} className="text-slate-400 mt-1" />
+                                            <div className="flex-1 space-y-2">
+                                                <p className="text-sm text-slate-500">Telefon{leadPhones.length > 1 ? 'lar' : ''}</p>
+                                                {leadPhones.map((phoneItem) => (
+                                                    <div key={phoneItem.id} className="flex items-center gap-2 flex-wrap">
+                                                        <p className="text-slate-800">{formatPhoneNumber(phoneItem.phone)}</p>
+                                                        {phoneItem.source === 'map' && (
+                                                            <Map
+                                                                size={16}
+                                                                className="text-blue-500"
+                                                                title="Haritadan alındı"
+                                                            />
+                                                        )}
+                                                        {phoneItem.has_whatsapp && (
+                                                            <div className="flex items-center gap-1">
+                                                                <a
+                                                                    href={`https://wa.me/${phoneItem.phone.replace(/\D/g, '')}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="relative group"
+                                                                    title="WhatsApp ile mesaj gönderin"
+                                                                >
+                                                                    <Image
+                                                                        src="/wp-icon.png"
+                                                                        alt="WhatsApp"
+                                                                        width={25}
+                                                                        height={25}
+                                                                        className="rounded cursor-pointer hover:opacity-80 transition-opacity"
+                                                                    />
+                                                                </a>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {leadEmails.length > 0 && (
+                                        <div className="flex items-start gap-3">
+                                            <Mail size={18} className="text-slate-400 mt-1" />
+                                            <div className="flex-1 space-y-2">
+                                                <p className="text-sm text-slate-500">Email{leadEmails.length > 1 ? 'ler' : ''}</p>
+                                                {leadEmails.map((emailItem) => (
+                                                    <p key={emailItem.id} className="text-slate-800">
+                                                        {emailItem.email}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {lead.website && (
+                                        <div className="flex items-start gap-3">
+                                            <Globe size={18} className="text-slate-400 mt-1" />
+                                            <div>
+                                                <p className="text-sm text-slate-500">Web Sitesi</p>
+                                                <a
+                                                    href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 hover:text-blue-800"
+                                                >
+                                                    {lead.website}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {lead.google_maps_url && (
+                                        <a
+                                            href={lead.google_maps_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
+                                        >
+                                            <Map size={18} />
+                                            <span>Google Maps</span>
+                                        </a>
+                                    )}
+
+                                    {lead.working_hours && typeof lead.working_hours === 'object' && (
+                                        <div>
+                                            <button
+                                                onClick={() => setShowAllWorkingHours(!showAllWorkingHours)}
+                                                className="w-full flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <Clock size={18} className="text-slate-400" />
+                                                    <div className="text-left">
+                                                        <p className="text-sm font-medium text-slate-700">Çalışma Saatleri</p>
+                                                        <p className="text-xs text-slate-500">
+                                                            {todayInTurkish}: {lead.working_hours[todayInTurkish] || 'Bilinmiyor'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-xs text-slate-400">
+                                                    {showAllWorkingHours ? 'Gizle' : 'Tümünü Göster'}
+                                                </span>
+                                            </button>
+
+                                            {showAllWorkingHours && (
+                                                <div className="mt-2 space-y-2">
+                                                    {Object.entries(lead.working_hours).map(([day, hours]) => (
+                                                        <div
+                                                            key={day}
+                                                            className={`flex items-center justify-between py-1.5 px-2 rounded-lg ${day === todayInTurkish
+                                                                ? 'bg-blue-50 border border-blue-200'
+                                                                : 'bg-slate-50'
+                                                                }`}
+                                                        >
+                                                            <span className={`text-sm ${day === todayInTurkish ? 'font-semibold text-blue-700' : 'text-slate-600'}`}>
+                                                                {day}
+                                                            </span>
+                                                            <span className={`text-sm ${day === todayInTurkish ? 'font-semibold text-blue-700' : 'font-medium text-slate-800'}`}>
+                                                                {hours}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -840,7 +848,7 @@ export default function LeadDetail({ id }) {
                                                                                 <div className="flex items-center gap-1.5">
                                                                                     <Calendar size={12} className="text-blue-600" />
                                                                                     <span className="text-xs font-medium text-blue-700">
-                                                                                        Due: {formatDate(activity.due_date)} {formatTime(activity.due_date)}
+                                                                                        Bitiş: {formatDate(activity.due_date)} {formatTime(activity.due_date)}
                                                                                     </span>
                                                                                 </div>
                                                                             </div>
@@ -867,7 +875,7 @@ export default function LeadDetail({ id }) {
                 </div>
 
                 {/* Right Column - Lead Groups, Campaigns, Tags */}
-                <div className="col-span-12 lg:col-span-3 space-y-4 overflow-hidden">
+                <div className="col-span-12 lg:col-span-3 space-y-4 overflow-y-auto overflow-x-hidden flex flex-col min-h-0">
                     {/* Quick Actions */}
                     <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                         <h3 className="font-semibold text-slate-800 mb-4">Hızlı İşlemler</h3>
@@ -972,7 +980,7 @@ export default function LeadDetail({ id }) {
                     </div>
                     {/* Lead Groups */}
                     <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                        <p className="text-sm font-medium text-slate-700 mb-3">Müşteri Gruplarına Ait</p>
+                        <p className="text-sm font-medium text-slate-700 mb-3">Müşteri Grupları</p>
                         <div className="space-y-2">
                             {leadGroups.length > 0 ? (
                                 leadGroups.map((group) => {
@@ -1341,6 +1349,24 @@ export default function LeadDetail({ id }) {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Edit Lead Modal */}
+            {showEditLeadModal && lead && (
+                <EditLeadModal
+                    lead={lead}
+                    onClose={() => setShowEditLeadModal(false)}
+                    onSuccess={() => {
+                        // Refresh lead data
+                        if (id && userId) {
+                            fetchById('leads', id).then(({ data, error }) => {
+                                if (!error && data) {
+                                    setLead(data);
+                                }
+                            });
+                        }
+                    }}
+                />
             )}
         </div>
     );

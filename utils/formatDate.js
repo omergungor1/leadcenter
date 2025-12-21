@@ -58,8 +58,8 @@ export function formatDateTime(dateString) {
 }
 
 /**
- * Formats a date string to show only time
- * Returns format: "10:30 AM"
+ * Formats a date string to show only time in GMT+3 timezone (Turkey)
+ * Returns format: "10:30" (24-hour format)
  */
 export function formatTime(dateString) {
     if (!dateString) return '';
@@ -67,15 +67,20 @@ export function formatTime(dateString) {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
 
-    return date.toLocaleTimeString('en-US', {
+    // Convert to GMT+3 (Turkey timezone - Europe/Istanbul)
+    const options = {
+        timeZone: 'Europe/Istanbul',
         hour: '2-digit',
         minute: '2-digit',
-    });
+        hour12: false,
+    };
+
+    return date.toLocaleTimeString('tr-TR', options);
 }
 
 /**
- * Formats a date string to show relative time (e.g., "2 hours ago", "3 days ago")
- * Returns format: "X minutes ago", "X hours ago", "X days ago", etc.
+ * Formats a date string to show relative time in GMT+3 timezone (Turkey)
+ * Returns format: "X dakika önce", "X saat önce", "X gün önce", etc.
  */
 export function formatTimeAgo(dateString) {
     if (!dateString) return '';
@@ -83,34 +88,42 @@ export function formatTimeAgo(dateString) {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return '';
 
+    // Get current time
     const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    // Both dates are already in UTC internally, so direct comparison is correct
+    // The difference calculation works correctly regardless of timezone
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 0) {
+        return 'az önce';
+    }
 
     if (diffInSeconds < 60) {
-        return 'just now';
+        return 'az önce';
     }
 
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     if (diffInMinutes < 60) {
-        return `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
+        return `${diffInMinutes} ${diffInMinutes === 1 ? 'dakika' : 'dakika'} önce`;
     }
 
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) {
-        return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
+        return `${diffInHours} ${diffInHours === 1 ? 'saat' : 'saat'} önce`;
     }
 
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 30) {
-        return `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
+        return `${diffInDays} ${diffInDays === 1 ? 'gün' : 'gün'} önce`;
     }
 
     const diffInMonths = Math.floor(diffInDays / 30);
     if (diffInMonths < 12) {
-        return `${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'} ago`;
+        return `${diffInMonths} ${diffInMonths === 1 ? 'ay' : 'ay'} önce`;
     }
 
     const diffInYears = Math.floor(diffInDays / 365);
-    return `${diffInYears} ${diffInYears === 1 ? 'year' : 'years'} ago`;
+    return `${diffInYears} ${diffInYears === 1 ? 'yıl' : 'yıl'} önce`;
 }
 

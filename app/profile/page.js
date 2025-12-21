@@ -60,7 +60,7 @@ export default function ProfilePage() {
                 const { data, error } = await fetchById('users', userId);
 
                 if (error) {
-                    toast.error('Error loading profile: ' + error.message);
+                    toast.error('Profil yüklenirken hata oluştu: ' + error.message);
                     return;
                 }
 
@@ -76,7 +76,7 @@ export default function ProfilePage() {
                 }
             } catch (error) {
                 console.error('Error:', error);
-                toast.error('An error occurred while loading profile');
+                toast.error('Profil yüklenirken bir hata oluştu');
             } finally {
                 setIsLoading(false);
             }
@@ -99,7 +99,7 @@ export default function ProfilePage() {
         e.preventDefault();
 
         if (!userId) {
-            toast.error('User not found. Please try again.');
+            toast.error('Kullanıcı bulunamadı. Lütfen tekrar deneyin.');
             return;
         }
 
@@ -118,13 +118,13 @@ export default function ProfilePage() {
             });
 
             if (error) {
-                toast.error('Error updating profile: ' + error.message);
+                toast.error('Profil güncellenirken hata oluştu: ' + error.message);
             } else {
-                toast.success('Profile updated successfully!');
+                toast.success('Profil başarıyla güncellendi!');
             }
         } catch (error) {
             console.error('Error:', error);
-            toast.error('An error occurred while saving. Please try again.');
+            toast.error('Kaydederken bir hata oluştu. Lütfen tekrar deneyin.');
         } finally {
             setIsSaving(false);
         }
@@ -133,22 +133,22 @@ export default function ProfilePage() {
     if (authLoading || isLoading) {
         return (
             <div className="p-6 flex items-center justify-center h-full">
-                <div className="text-slate-500">Loading...</div>
+                <div className="text-slate-500">Yükleniyor...</div>
             </div>
         );
     }
 
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-3xl font-bold text-slate-800">Profile</h1>
+            <h1 className="text-3xl font-bold text-slate-800">Profil</h1>
 
             <form onSubmit={handleSubmit}>
                 <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h2 className="text-xl font-semibold text-slate-800">Personal Information</h2>
+                            <h2 className="text-xl font-semibold text-slate-800">Kişisel Bilgiler</h2>
                             <p className="text-sm text-slate-500 mt-1">
-                                Update your personal information
+                                Kişisel bilgilerinizi güncelleyin
                             </p>
                         </div>
                         <button
@@ -157,7 +157,7 @@ export default function ProfilePage() {
                             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Save size={18} />
-                            <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+                            <span>{isSaving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}</span>
                         </button>
                     </div>
 
@@ -167,7 +167,7 @@ export default function ProfilePage() {
                             <label className="block text-sm font-medium text-slate-700 mb-2">
                                 <div className="flex items-center gap-2">
                                     <User size={16} className="text-slate-400" />
-                                    <span>Full Name</span>
+                                    <span>Ad Soyad</span>
                                 </div>
                             </label>
                             <input
@@ -175,7 +175,7 @@ export default function ProfilePage() {
                                 value={formData.name}
                                 onChange={(e) => handleInputChange('name', e.target.value)}
                                 className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Enter your full name"
+                                placeholder="Adınızı ve soyadınızı girin"
                             />
                         </div>
 
@@ -184,8 +184,8 @@ export default function ProfilePage() {
                             <label className="block text-sm font-medium text-slate-700 mb-2">
                                 <div className="flex items-center gap-2">
                                     <Mail size={16} className="text-slate-400" />
-                                    <span>Email Address</span>
-                                    <span className="text-xs text-slate-400">(Read-only)</span>
+                                    <span>E-posta Adresi</span>
+                                    <span className="text-xs text-slate-400">(Salt Okunur)</span>
                                 </div>
                             </label>
                             <input
@@ -194,7 +194,7 @@ export default function ProfilePage() {
                                 readOnly
                                 disabled
                                 className="w-full px-4 py-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-500 cursor-not-allowed"
-                                placeholder="your@email.com"
+                                placeholder="ornek@email.com"
                             />
                         </div>
 
@@ -203,7 +203,7 @@ export default function ProfilePage() {
                             <label className="block text-sm font-medium text-slate-700 mb-2">
                                 <div className="flex items-center gap-2">
                                     <Phone size={16} className="text-slate-400" />
-                                    <span>Phone Number</span>
+                                    <span>Telefon Numarası</span>
                                 </div>
                             </label>
                             <input
@@ -221,7 +221,7 @@ export default function ProfilePage() {
                             <label className="block text-sm font-medium text-slate-700 mb-2">
                                 <div className="flex items-center gap-2">
                                     <Building2 size={16} className="text-slate-400" />
-                                    <span>Company Name</span>
+                                    <span>Şirket Adı</span>
                                 </div>
                             </label>
                             <input
@@ -229,7 +229,7 @@ export default function ProfilePage() {
                                 value={formData.company_name}
                                 onChange={(e) => handleInputChange('company_name', e.target.value)}
                                 className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Enter company name"
+                                placeholder="Şirket adını girin"
                             />
                         </div>
 
@@ -238,7 +238,7 @@ export default function ProfilePage() {
                             <label className="block text-sm font-medium text-slate-700 mb-2">
                                 <div className="flex items-center gap-2">
                                     <TrendingUp size={16} className="text-slate-400" />
-                                    <span>Industry</span>
+                                    <span>Sektör</span>
                                 </div>
                             </label>
                             <input
@@ -246,7 +246,7 @@ export default function ProfilePage() {
                                 value={formData.industry}
                                 onChange={(e) => handleInputChange('industry', e.target.value)}
                                 className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Enter industry"
+                                placeholder="Sektörü girin"
                             />
                         </div>
 
@@ -255,7 +255,7 @@ export default function ProfilePage() {
                             <label className="block text-sm font-medium text-slate-700 mb-2">
                                 <div className="flex items-center gap-2">
                                     <Briefcase size={16} className="text-slate-400" />
-                                    <span>Position / Role</span>
+                                    <span>Pozisyon / Rol</span>
                                 </div>
                             </label>
                             <input
@@ -263,7 +263,7 @@ export default function ProfilePage() {
                                 value={formData.role}
                                 onChange={(e) => handleInputChange('role', e.target.value)}
                                 className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Enter your position"
+                                placeholder="Pozisyonunuzu girin"
                             />
                         </div>
                     </div>

@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { insert } from '@/lib/supabase/database';
+import { insert, fetchById, updateById } from '@/lib/supabase/database';
 import { toast } from 'sonner';
 import { formatPhoneNumber } from '../../utils/formatPhoneNumber';
 
-export default function CreateLeadModal({ userId, onClose, onSuccess }) {
+export default function CreateLeadModal({ userId, groupId, onClose, onSuccess }) {
     const [formData, setFormData] = useState({
         name: '',
         company: '',
@@ -42,11 +42,75 @@ export default function CreateLeadModal({ userId, onClose, onSuccess }) {
                 is_active: true,
             };
 
-            const { data, error } = await insert('leads', leadData);
+            const { data: lead, error: leadError } = await insert('leads', leadData);
 
-            if (error) {
-                toast.error('Müşteri oluşturulurken hata oluştu: ' + error.message);
+            if (leadError) {
+                toast.error('Müşteri oluşturulurken hata oluştu: ' + leadError.message);
                 return;
+            }
+
+            // Normalize and insert phone number into lead_phones table
+            if (lead && formData.phone && formData.phone.trim()) {
+                // Normalize phone: remove spaces and parentheses
+                let normalizedPhone = formData.phone.trim()
+                    .replace(/\s+/g, '') // Remove spaces
+                    .replace(/[()]/g, ''); // Remove parentheses
+
+                // For Turkish phone numbers: if starts with 0, remove it and add 9 prefix
+                // If already starts with 9, keep as is
+                if (normalizedPhone) {
+                    if (normalizedPhone.startsWith('0')) {
+                        // Remove leading 0 and add 9 prefix
+                        normalizedPhone = '9' + normalizedPhone.substring(1);
+                    } else if (!normalizedPhone.startsWith('9')) {
+                        // If doesn't start with 9 or 0, add 9 prefix
+                        normalizedPhone = '9' + normalizedPhone;
+                    }
+
+                    // Insert into lead_phones table
+                    const { error: phoneError } = await insert('lead_phones', {
+                        lead_id: lead.id,
+                        phone: normalizedPhone,
+                        source: 'manual',
+                        has_whatsapp: null,
+                        is_primary: false,
+                    });
+
+                    if (phoneError) {
+                        console.error('Error inserting phone:', phoneError);
+                        // Don't fail the whole operation if phone insert fails
+                    }
+                }
+            }
+
+            // If groupId is provided, add lead to group
+            if (groupId && lead) {
+                // Insert into lead_groups_map
+                const { error: mapError } = await insert('lead_groups_map', {
+                    user_id: userId,
+                    lead_id: lead.id,
+                    lead_group_id: groupId,
+                });
+
+                if (mapError) {
+                    console.error('Error adding lead to group:', mapError);
+                    toast.error('Müşteri gruba eklenirken hata oluştu: ' + mapError.message);
+                    return;
+                }
+
+                // Update lead_count in lead_groups
+                const { data: groupData, error: groupError } = await fetchById('lead_groups', groupId);
+                if (!groupError && groupData) {
+                    const newLeadCount = (groupData.lead_count || 0) + 1;
+                    const { error: updateError } = await updateById('lead_groups', groupId, {
+                        lead_count: newLeadCount,
+                        updated_at: new Date().toISOString(),
+                    });
+
+                    if (updateError) {
+                        console.error('Error updating lead_count:', updateError);
+                    }
+                }
             }
 
             toast.success('Müşteri başarıyla oluşturuldu!');

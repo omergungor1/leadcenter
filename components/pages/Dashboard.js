@@ -17,13 +17,12 @@ export default function Dashboard() {
     const [latestLeadGroups, setLatestLeadGroups] = useState([]);
     const [ongoingCampaigns, setOngoingCampaigns] = useState([]);
 
-    // Daily limits from Settings (mock - in real app, this would come from API/context)
-    const dailyLimits = {
+    const [dailyLimits, setDailyLimits] = useState({
         whatsapp: 100,
         call: 50,
         email: 200,
         visit: 20,
-    };
+    });
 
     const [stats, setStats] = useState({
         totalLeads: 0,
@@ -263,10 +262,20 @@ export default function Dashboard() {
                             // Toplam lead sayısı = tek tek eklenen + grup olarak eklenen
                             const totalLeadCount = individualLeadCount + groupLeadCount;
 
+                            // Get completed activities count (activities with same type as campaign)
+                            const { count: completedCount } = await supabase
+                                .from('activities')
+                                .select('*', { count: 'exact', head: true })
+                                .eq('campaign_id', campaign.id)
+                                .eq('activity_type', campaign.campaign_type)
+                                .eq('status', 'completed');
+
+                            const sent = completedCount || 0;
+
                             return {
                                 ...campaign,
                                 leadCount: totalLeadCount,
-                                sent: 0, // Can be calculated from activities later
+                                sent: sent,
                             };
                         })
                     );
@@ -281,43 +290,104 @@ export default function Dashboard() {
         fetchOngoingCampaigns();
     }, [userId]);
 
-    // Mock daily goals (keeping existing logic for now)
+    // Fetch daily limits from user settings
     useEffect(() => {
-        // Count today's activities by type (mock - can be updated later)
-        const whatsappCount = 0;
-        const callCount = 0;
-        const emailCount = 0;
-        const visitCount = 0;
+        const fetchDailyLimits = async () => {
+            if (!userId) return;
 
-        // Cap at daily limit
-        const mockWhatsapp = Math.min(whatsappCount, dailyLimits.whatsapp);
-        const mockCall = Math.min(callCount, dailyLimits.call);
-        const mockEmail = Math.min(emailCount, dailyLimits.email);
-        const mockVisit = Math.min(visitCount, dailyLimits.visit);
+            try {
+                const { data: userData, error } = await supabase
+                    .from('users')
+                    .select('whatsapp_limit, call_limit, mail_limit, visit_limit')
+                    .eq('id', userId)
+                    .single();
 
-        setDailyGoals({
-            whatsapp: {
-                completed: mockWhatsapp,
-                remaining: Math.max(0, dailyLimits.whatsapp - mockWhatsapp),
-                percentage: dailyLimits.whatsapp > 0 ? Math.round((mockWhatsapp / dailyLimits.whatsapp) * 100) : 0,
-            },
-            call: {
-                completed: mockCall,
-                remaining: Math.max(0, dailyLimits.call - mockCall),
-                percentage: dailyLimits.call > 0 ? Math.round((mockCall / dailyLimits.call) * 100) : 0,
-            },
-            email: {
-                completed: mockEmail,
-                remaining: Math.max(0, dailyLimits.email - mockEmail),
-                percentage: dailyLimits.email > 0 ? Math.round((mockEmail / dailyLimits.email) * 100) : 0,
-            },
-            visit: {
-                completed: mockVisit,
-                remaining: Math.max(0, dailyLimits.visit - mockVisit),
-                percentage: dailyLimits.visit > 0 ? Math.round((mockVisit / dailyLimits.visit) * 100) : 0,
-            },
-        });
-    }, []);
+                if (error) {
+                    console.error('Error fetching daily limits:', error);
+                    return;
+                }
+
+                if (userData) {
+                    setDailyLimits({
+                        whatsapp: userData.whatsapp_limit || 100,
+                        call: userData.call_limit || 50,
+                        email: userData.mail_limit || 200,
+                        visit: userData.visit_limit || 20,
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        };
+
+        fetchDailyLimits();
+    }, [userId]);
+
+    // Fetch today's completed activities count
+    useEffect(() => {
+        const fetchTodayCompletedActivities = async () => {
+            if (!userId) return;
+
+            try {
+                // Get today's date (start and end of day)
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayStart = today.toISOString();
+                const todayEnd = new Date(today);
+                todayEnd.setHours(23, 59, 59, 999);
+                const todayEndStr = todayEnd.toISOString();
+
+                // Fetch all completed activities created today
+                const { data: activitiesData, error } = await supabase
+                    .from('activities')
+                    .select('activity_type')
+                    .eq('user_id', userId)
+                    .eq('status', 'completed')
+                    .eq('is_deleted', false)
+                    .gte('created_at', todayStart)
+                    .lte('created_at', todayEndStr);
+
+                if (error) {
+                    console.error('Error fetching today activities:', error);
+                    return;
+                }
+
+                // Count activities by type
+                const whatsappCount = activitiesData?.filter((a) => a.activity_type === 'whatsapp').length || 0;
+                const callCount = activitiesData?.filter((a) => a.activity_type === 'call').length || 0;
+                const emailCount = activitiesData?.filter((a) => a.activity_type === 'email').length || 0;
+                const visitCount = activitiesData?.filter((a) => a.activity_type === 'visit').length || 0;
+
+                // Calculate goals
+                setDailyGoals({
+                    whatsapp: {
+                        completed: whatsappCount,
+                        remaining: Math.max(0, dailyLimits.whatsapp - whatsappCount),
+                        percentage: dailyLimits.whatsapp > 0 ? Math.round((whatsappCount / dailyLimits.whatsapp) * 100) : 0,
+                    },
+                    call: {
+                        completed: callCount,
+                        remaining: Math.max(0, dailyLimits.call - callCount),
+                        percentage: dailyLimits.call > 0 ? Math.round((callCount / dailyLimits.call) * 100) : 0,
+                    },
+                    email: {
+                        completed: emailCount,
+                        remaining: Math.max(0, dailyLimits.email - emailCount),
+                        percentage: dailyLimits.email > 0 ? Math.round((emailCount / dailyLimits.email) * 100) : 0,
+                    },
+                    visit: {
+                        completed: visitCount,
+                        remaining: Math.max(0, dailyLimits.visit - visitCount),
+                        percentage: dailyLimits.visit > 0 ? Math.round((visitCount / dailyLimits.visit) * 100) : 0,
+                    },
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        };
+
+        fetchTodayCompletedActivities();
+    }, [userId, dailyLimits]);
 
     const getActivityTypeLabel = (type) => {
         if (!type) return '-';
@@ -586,9 +656,11 @@ export default function Dashboard() {
                                                 {campaignTypeLabel}
                                             </span>
                                         </div>
-                                        <span className="text-sm text-slate-600">
-                                            {campaign.sent || 0} / {campaign.leadCount || 0}
-                                        </span>
+                                        <div className="text-sm text-slate-600 whitespace-nowrap">
+                                            <span className="text-green-600 font-medium">{campaign.sent || 0}</span>
+                                            <span className="text-slate-400 mx-1">/</span>
+                                            <span className="font-medium">{campaign.leadCount || 0}</span>
+                                        </div>
                                     </div>
                                     <div className="w-full bg-slate-200 rounded-full h-2">
                                         <div

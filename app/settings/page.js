@@ -104,7 +104,7 @@ export default function SettingsPage() {
 
     const handleSave = async () => {
         if (!userId) {
-            alert('User not found. Please try again.');
+            toast.error('Kullanıcı bulunamadı. Lütfen tekrar deneyin.');
             return;
         }
 
@@ -119,13 +119,13 @@ export default function SettingsPage() {
             });
 
             if (error) {
-                toast.error('Error updating daily limits: ' + error.message);
+                toast.error('Günlük limitler güncellenirken hata oluştu: ' + error.message);
             } else {
-                toast.success('Daily limits updated successfully!');
+                toast.success('Günlük limitler başarıyla güncellendi!');
             }
         } catch (error) {
             console.error('Error:', error);
-            toast.error('An error occurred while saving. Please try again.');
+            toast.error('Kaydederken bir hata oluştu. Lütfen tekrar deneyin.');
         } finally {
             setIsSaving(false);
         }
@@ -137,28 +137,28 @@ export default function SettingsPage() {
             label: 'WhatsApp',
             icon: MessageSquare,
             color: 'green',
-            description: 'Daily WhatsApp message limit',
+            description: 'Günlük WhatsApp mesaj limiti',
         },
         {
             key: 'call',
-            label: 'Call',
+            label: 'Telefon',
             icon: Phone,
             color: 'blue',
-            description: 'Daily call limit',
+            description: 'Günlük telefon araması limiti',
         },
         {
             key: 'email',
-            label: 'Email',
+            label: 'E-posta',
             icon: Mail,
             color: 'purple',
-            description: 'Daily email limit',
+            description: 'Günlük e-posta limiti',
         },
         {
             key: 'visit',
-            label: 'Visit',
+            label: 'Ziyaret',
             icon: MapPin,
             color: 'orange',
-            description: 'Daily visit limit',
+            description: 'Günlük ziyaret limiti',
         },
     ];
 
@@ -206,12 +206,12 @@ export default function SettingsPage() {
 
     const handleSaveTag = async () => {
         if (!tagForm.name.trim()) {
-            toast.error('Tag name is required');
+            toast.error('Etiket adı gereklidir');
             return;
         }
 
         if (!userId) {
-            toast.error('User not found. Please try again.');
+            toast.error('Kullanıcı bulunamadı. Lütfen tekrar deneyin.');
             return;
         }
 
@@ -225,14 +225,14 @@ export default function SettingsPage() {
                 });
 
                 if (error) {
-                    toast.error('Error updating tag: ' + error.message);
+                    toast.error('Etiket güncellenirken hata oluştu: ' + error.message);
                     return;
                 }
 
                 setTags(tags.map((tag) =>
                     tag.id === editingTag.id ? { ...tag, ...data } : tag
                 ));
-                toast.success('Tag updated successfully!');
+                toast.success('Etiket başarıyla güncellendi!');
             } else {
                 // Create new tag
                 const { data, error } = await insert('lead_tags', {
@@ -243,22 +243,22 @@ export default function SettingsPage() {
                 });
 
                 if (error) {
-                    toast.error('Error creating tag: ' + error.message);
+                    toast.error('Etiket oluşturulurken hata oluştu: ' + error.message);
                     return;
                 }
 
                 setTags([...tags, data]);
-                toast.success('Tag created successfully!');
+                toast.success('Etiket başarıyla oluşturuldu!');
             }
             handleCloseTagModal();
         } catch (error) {
             console.error('Error:', error);
-            toast.error('An error occurred. Please try again.');
+            toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
         }
     };
 
     const handleDeleteTag = async (tagId) => {
-        if (!confirm('Are you sure you want to delete this tag?')) {
+        if (!confirm('Bu etiketi silmek istediğinizden emin misiniz?')) {
             return;
         }
 
@@ -270,37 +270,37 @@ export default function SettingsPage() {
             });
 
             if (error) {
-                toast.error('Error deleting tag: ' + error.message);
+                toast.error('Etiket silinirken hata oluştu: ' + error.message);
                 return;
             }
 
             setTags(tags.filter((tag) => tag.id !== tagId));
-            toast.success('Tag deleted successfully!');
+            toast.success('Etiket başarıyla silindi!');
         } catch (error) {
             console.error('Error:', error);
-            toast.error('An error occurred. Please try again.');
+            toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
         }
     };
 
     if (authLoading || isLoading) {
         return (
             <div className="p-6 flex items-center justify-center h-full">
-                <div className="text-slate-500">Loading...</div>
+                <div className="text-slate-500">Yükleniyor...</div>
             </div>
         );
     }
 
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-3xl font-bold text-slate-800">Settings</h1>
+            <h1 className="text-3xl font-bold text-slate-800">Ayarlar</h1>
 
             {/* Daily Limits Panel */}
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h2 className="text-xl font-semibold text-slate-800">Daily Limits & Goals</h2>
+                        <h2 className="text-xl font-semibold text-slate-800">Günlük Limitler ve Hedefler</h2>
                         <p className="text-sm text-slate-500 mt-1">
-                            Set daily limits for each campaign type
+                            Her kampanya türü için günlük limitler belirleyin
                         </p>
                     </div>
                     <button
@@ -309,7 +309,7 @@ export default function SettingsPage() {
                         className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Save size={18} />
-                        <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+                        <span>{isSaving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}</span>
                     </button>
                 </div>
 
@@ -332,7 +332,7 @@ export default function SettingsPage() {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                                        Daily Limit
+                                        Günlük Limit
                                     </label>
                                     <div className="flex items-center gap-2">
                                         <input
@@ -343,7 +343,7 @@ export default function SettingsPage() {
                                             className="flex-1 px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             placeholder="0"
                                         />
-                                        <span className="text-slate-500 font-medium">/ day</span>
+                                        <span className="text-slate-500 font-medium">/ gün</span>
                                     </div>
                                 </div>
                             </div>
@@ -356,9 +356,9 @@ export default function SettingsPage() {
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h2 className="text-xl font-semibold text-slate-800">Tag Management</h2>
+                        <h2 className="text-xl font-semibold text-slate-800">Etiket Yönetimi</h2>
                         <p className="text-sm text-slate-500 mt-1">
-                            Create, edit, and delete tags for leads
+                            Müşteriler için etiketler oluşturun, düzenleyin ve silin
                         </p>
                     </div>
                     <button
@@ -366,7 +366,7 @@ export default function SettingsPage() {
                         className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium"
                     >
                         <Plus size={18} />
-                        <span>Add Tag</span>
+                        <span>Etiket Ekle</span>
                     </button>
                 </div>
 
@@ -393,14 +393,14 @@ export default function SettingsPage() {
                                     <button
                                         onClick={() => handleOpenTagModal(tag)}
                                         className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
-                                        title="Edit tag"
+                                        title="Etiketi düzenle"
                                     >
                                         <Edit2 size={16} className="text-slate-600" />
                                     </button>
                                     <button
                                         onClick={() => handleDeleteTag(tag.id)}
                                         className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                                        title="Delete tag"
+                                        title="Etiketi sil"
                                     >
                                         <Trash2 size={16} className="text-red-600" />
                                     </button>
@@ -434,7 +434,7 @@ export default function SettingsPage() {
                     >
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-semibold text-slate-800">
-                                {editingTag ? 'Edit Tag' : 'Create Tag'}
+                                {editingTag ? 'Etiketi Düzenle' : 'Etiket Oluştur'}
                             </h3>
                             <button
                                 onClick={handleCloseTagModal}
@@ -447,20 +447,20 @@ export default function SettingsPage() {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Tag Name <span className="text-red-500">*</span>
+                                    Etiket Adı <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={tagForm.name}
                                     onChange={(e) => setTagForm({ ...tagForm, name: e.target.value })}
                                     className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., Premium, VIP"
+                                    placeholder="örn: Premium, VIP"
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Color <span className="text-red-500">*</span>
+                                    Renk <span className="text-red-500">*</span>
                                 </label>
                                 <div className="flex items-center gap-3">
                                     <input
@@ -485,7 +485,7 @@ export default function SettingsPage() {
                                             color: tagForm.color,
                                         }}
                                     >
-                                        Preview
+                                        Önizleme
                                     </span>
                                 </div>
                             </div>
@@ -496,13 +496,13 @@ export default function SettingsPage() {
                                 onClick={handleCloseTagModal}
                                 className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
                             >
-                                Cancel
+                                İptal
                             </button>
                             <button
                                 onClick={handleSaveTag}
                                 className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium"
                             >
-                                {editingTag ? 'Update' : 'Create'}
+                                {editingTag ? 'Güncelle' : 'Oluştur'}
                             </button>
                         </div>
                     </div>

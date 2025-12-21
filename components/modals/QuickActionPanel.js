@@ -45,28 +45,29 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
         e.preventDefault();
 
         if (!formData.content.trim() && actionType !== 'call' && actionType !== 'task') {
-            toast.error('Content is required');
+            toast.error('İçerik gereklidir');
             return;
         }
 
         if (actionType === 'task' && !taskType) {
-            toast.error('Please select a task type');
+            toast.error('Lütfen bir görev tipi seçin');
             return;
         }
 
         if ((actionType === 'meeting' || actionType === 'task' || actionType === 'todo') && !formData.due_date) {
-            toast.error('Date is required for ' + (actionType === 'meeting' ? 'meeting' : actionType === 'todo' ? 'todo' : 'task'));
+            const typeLabel = actionType === 'meeting' ? 'toplantı' : actionType === 'todo' ? 'görev' : 'görev';
+            toast.error(typeLabel + ' için tarih gereklidir');
             return;
         }
 
         // Validate follow-up if enabled
         if (hasFollowUp) {
             if (!followUpData.content.trim()) {
-                toast.error('Follow-up description is required');
+                toast.error('Takip açıklaması gereklidir');
                 return;
             }
             if (!followUpData.due_date) {
-                toast.error('Follow-up date is required');
+                toast.error('Takip tarihi gereklidir');
                 return;
             }
         }
@@ -104,7 +105,7 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
             const { data: mainActivity, error: mainError } = await insert('activities', activityData);
 
             if (mainError) {
-                toast.error('Error creating activity: ' + mainError.message);
+                toast.error('Aktivite oluşturulurken hata oluştu: ' + mainError.message);
                 return;
             }
 
@@ -125,17 +126,17 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                 const { error: followUpError } = await insert('activities', followUpActivityData);
 
                 if (followUpError) {
-                    toast.error('Error creating follow-up: ' + followUpError.message);
+                    toast.error('Takip oluşturulurken hata oluştu: ' + followUpError.message);
                     return;
                 }
             }
 
-            toast.success('Activity created successfully!');
+            toast.success('Aktivite başarıyla oluşturuldu!');
             onActivityAdded?.();
             handleClose();
         } catch (error) {
             console.error('Error:', error);
-            toast.error('An error occurred. Please try again.');
+            toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
         } finally {
             setIsSaving(false);
         }
@@ -143,16 +144,16 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
 
     const getDefaultTitle = (type) => {
         const titles = {
-            note: 'Note',
-            email: 'Email',
-            call: 'Call',
-            visit: 'Visit',
-            meeting: 'Meeting',
-            follow_up: 'Follow Up',
+            note: 'Not',
+            email: 'E-posta',
+            call: 'Arama',
+            visit: 'Ziyaret',
+            meeting: 'Toplantı',
+            follow_up: 'Takip',
             whatsapp: 'WhatsApp',
-            todo: 'Todo',
+            todo: 'Görev',
         };
-        return titles[type] || 'Activity';
+        return titles[type] || 'Aktivite';
     };
 
     const handleClose = () => {
@@ -228,21 +229,21 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                             return <Icon size={18} className={getActionColor(actionType === 'task' ? taskType : actionType).split(' ')[1]} />;
                         })()}
                         <span className="text-sm font-medium text-slate-800">
-                            {actionType === 'task' ? 'Task' : actionType ? getDefaultTitle(actionType) : 'Quick Actions'}
+                            {actionType === 'task' ? 'Görev' : actionType ? getDefaultTitle(actionType) : 'Hızlı İşlemler'}
                         </span>
                     </div>
                     <div className="flex items-center gap-1">
                         <button
                             onClick={() => setIsMinimized(false)}
                             className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Maximize"
+                            title="Büyüt"
                         >
                             <Maximize2 size={16} className="text-slate-600" />
                         </button>
                         <button
                             onClick={handleClose}
                             className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Close"
+                            title="Kapat"
                         >
                             <X size={16} className="text-slate-600" />
                         </button>
@@ -261,13 +262,13 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                         {actionType ? (
                             <>
                                 {actionType === 'task'
-                                    ? 'Create Task'
+                                    ? 'Görev Oluştur'
                                     : actionType === 'whatsapp'
-                                        ? 'Add WhatsApp Message'
-                                        : `Add ${getDefaultTitle(actionType)}`}
+                                        ? 'WhatsApp Mesajı Ekle'
+                                        : `${getDefaultTitle(actionType)} Ekle`}
                             </>
                         ) : (
-                            'Quick Actions'
+                            'Hızlı İşlemler'
                         )}
                     </h3>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -278,14 +279,14 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                     <button
                         onClick={() => setIsMinimized(true)}
                         className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
-                        title="Minimize"
+                        title="Küçült"
                     >
                         <Minimize2 size={18} className="text-slate-600" />
                     </button>
                     <button
                         onClick={handleClose}
                         className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
-                        title="Close"
+                        title="Kapat"
                     >
                         <X size={18} className="text-slate-600" />
                     </button>
@@ -298,14 +299,14 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                     // Action Selection
                     <div className="grid grid-cols-3 gap-3">
                         {[
-                            { type: 'note', label: 'Note', icon: FileText },
-                            { type: 'email', label: 'Email', icon: Mail },
-                            { type: 'call', label: 'Call', icon: PhoneCall },
+                            { type: 'note', label: 'Not', icon: FileText },
+                            { type: 'email', label: 'E-posta', icon: Mail },
+                            { type: 'call', label: 'Arama', icon: PhoneCall },
                             { type: 'whatsapp', label: 'WhatsApp', icon: MessageSquare },
-                            { type: 'visit', label: 'Visit', icon: MapPin },
-                            { type: 'meeting', label: 'Meeting', icon: Calendar },
-                            { type: 'task', label: 'Task', icon: CheckSquare },
-                            { type: 'todo', label: 'Todo', icon: CheckSquare },
+                            { type: 'visit', label: 'Ziyaret', icon: MapPin },
+                            { type: 'meeting', label: 'Toplantı', icon: Calendar },
+                            { type: 'task', label: 'Görev', icon: CheckSquare },
+                            { type: 'todo', label: 'Görev', icon: CheckSquare },
                         ].map((action) => {
                             const Icon = action.icon;
                             const colorClass = getActionColor(action.type);
@@ -326,11 +327,17 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                 ) : actionType === 'task' && !taskType ? (
                     // Task Type Selection
                     <div className="space-y-3">
-                        <p className="text-sm font-medium text-slate-700 mb-3">Select Task Type:</p>
+                        <p className="text-sm font-medium text-slate-700 mb-3">Görev Tipi Seçin:</p>
                         <div className="grid grid-cols-2 gap-2">
                             {['email', 'call', 'visit', 'todo'].map((type) => {
                                 const Icon = getActionIcon(type);
                                 const colorClass = getActionColor(type);
+                                const typeLabels = {
+                                    email: 'E-posta',
+                                    call: 'Arama',
+                                    visit: 'Ziyaret',
+                                    todo: 'Görev',
+                                };
                                 return (
                                     <button
                                         key={type}
@@ -340,8 +347,8 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                                         <div className={`w-10 h-10 ${colorClass} rounded-full flex items-center justify-center flex-shrink-0`}>
                                             <Icon size={18} />
                                         </div>
-                                        <span className="text-sm font-medium text-slate-700 capitalize">
-                                            {type}
+                                        <span className="text-sm font-medium text-slate-700">
+                                            {typeLabels[type] || type}
                                         </span>
                                     </button>
                                 );
@@ -354,18 +361,18 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
                                 {actionType === 'call'
-                                    ? 'Call Notes'
+                                    ? 'Arama Notları'
                                     : actionType === 'whatsapp'
-                                        ? 'WhatsApp Message'
+                                        ? 'WhatsApp Mesajı'
                                         : actionType === 'email'
-                                            ? 'Email Content'
+                                            ? 'E-posta İçeriği'
                                             : actionType === 'note'
-                                                ? 'Note'
+                                                ? 'Not'
                                                 : actionType === 'visit'
-                                                    ? 'Visit Details'
+                                                    ? 'Ziyaret Detayları'
                                                     : actionType === 'todo'
-                                                        ? 'Todo Description'
-                                                        : 'Content'} <span className="text-red-500">*</span>
+                                                        ? 'Görev Açıklaması'
+                                                        : 'İçerik'} <span className="text-red-500">*</span>
                             </label>
                             <textarea
                                 value={formData.content}
@@ -374,18 +381,18 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                                 rows={actionType === 'call' ? 3 : 5}
                                 placeholder={
                                     actionType === 'call'
-                                        ? 'Call notes...'
+                                        ? 'Arama notları...'
                                         : actionType === 'email'
-                                            ? 'Email content...'
+                                            ? 'E-posta içeriği...'
                                             : actionType === 'whatsapp'
-                                                ? 'WhatsApp message content...'
+                                                ? 'WhatsApp mesaj içeriği...'
                                                 : actionType === 'note'
-                                                    ? 'Note content...'
+                                                    ? 'Not içeriği...'
                                                     : actionType === 'visit'
-                                                        ? 'Visit details...'
+                                                        ? 'Ziyaret detayları...'
                                                         : actionType === 'todo'
-                                                            ? 'Todo description...'
-                                                            : 'Enter details...'
+                                                            ? 'Görev açıklaması...'
+                                                            : 'Detayları girin...'
                                 }
                                 required={actionType !== 'call'}
                             />
@@ -395,7 +402,7 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                                        Date <span className="text-red-500">*</span>
+                                        Tarih <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="date"
@@ -407,7 +414,7 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                                        Time <span className="text-red-500">*</span>
+                                        Saat <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="time"
@@ -429,28 +436,28 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                                     onChange={(e) => setHasFollowUp(e.target.checked)}
                                     className="rounded"
                                 />
-                                <span className="text-sm font-medium text-slate-700">Add Follow-up</span>
+                                <span className="text-sm font-medium text-slate-700">Takip Ekle</span>
                             </label>
 
                             {hasFollowUp && (
                                 <div className="space-y-3 pl-6 border-l-2 border-blue-200">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-2">
-                                            Follow-up Description <span className="text-red-500">*</span>
+                                            Takip Açıklaması <span className="text-red-500">*</span>
                                         </label>
                                         <textarea
                                             value={followUpData.content}
                                             onChange={(e) => setFollowUpData({ ...followUpData, content: e.target.value })}
                                             className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                             rows={3}
-                                            placeholder="Enter follow-up description..."
+                                            placeholder="Takip açıklamasını girin..."
                                             required
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                                Follow-up Date <span className="text-red-500">*</span>
+                                                Takip Tarihi <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="date"
@@ -462,7 +469,7 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                                Follow-up Time <span className="text-red-500">*</span>
+                                                Takip Saati <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="time"
@@ -489,7 +496,7 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                                 }}
                                 className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors text-sm font-medium"
                             >
-                                Back
+                                Geri
                             </button>
                             <button
                                 type="submit"
@@ -499,12 +506,12 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                                 {isSaving ? (
                                     <>
                                         <span className="animate-spin">⏳</span>
-                                        <span>Saving...</span>
+                                        <span>Kaydediliyor...</span>
                                     </>
                                 ) : (
                                     <>
                                         <Save size={16} />
-                                        <span>Save</span>
+                                        <span>Kaydet</span>
                                     </>
                                 )}
                             </button>

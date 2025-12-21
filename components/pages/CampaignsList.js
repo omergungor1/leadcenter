@@ -314,31 +314,25 @@ export default function CampaignsList() {
                     <table className="w-full">
                         <thead className="bg-slate-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                                     Kampanya Adı
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                                     Tür
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide whitespace-nowrap">
                                     Durum
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Toplam Müşteri
+                                <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide whitespace-nowrap">
+                                    Müşteri
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Gönderilen
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Kalan
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                                     İlerleme
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                    Oluşturulma Tarihi
+                                <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide whitespace-nowrap">
+                                    Tarih
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                                <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-500 uppercase tracking-wide">
                                     İşlemler
                                 </th>
                             </tr>
@@ -347,66 +341,64 @@ export default function CampaignsList() {
                             {filteredCampaigns.length > 0 ? (
                                 filteredCampaigns.map((campaign) => (
                                     <tr key={campaign.id} className="hover:bg-slate-50">
-                                        <td className="px-6 py-4">
+                                        <td className="px-3 py-3">
                                             <Link
                                                 href={`/campaigns/${campaign.id}`}
-                                                className="font-medium text-slate-800 hover:text-blue-600"
+                                                className="text-sm font-medium text-slate-800 hover:text-blue-600 line-clamp-1"
                                             >
                                                 {campaign.name}
                                             </Link>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-3 py-3">
                                             <span
-                                                className={`px-2 py-1 rounded-lg text-xs font-medium ${getTypeColor(
+                                                className={`inline-block px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${getTypeColor(
                                                     campaign.campaign_type
                                                 )}`}
                                             >
                                                 {getTypeLabel(campaign.campaign_type)}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-3 py-3">
                                             <span
-                                                className={`px-2 py-1 rounded-lg text-xs font-medium ${getStatusColor(
+                                                className={`inline-block px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ${getStatusColor(
                                                     campaign.status
                                                 )}`}
                                             >
                                                 {getStatusLabel(campaign.status)}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-slate-600 font-medium">
-                                            {campaign.totalLeads || 0}
+                                        <td className="px-3 py-3">
+                                            <div className="text-sm text-slate-600 whitespace-nowrap">
+                                                <span className="text-green-600 font-medium">{campaign.completedLeads || 0}</span>
+                                                <span className="text-slate-400 mx-1">/</span>
+                                                <span className="font-medium">{campaign.totalLeads || 0}</span>
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-4 text-green-600 font-medium">
-                                            {campaign.completedLeads || 0}
-                                        </td>
-                                        <td className="px-6 py-4 text-orange-600 font-medium">
-                                            {campaign.remainingLeads || 0}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex-1 bg-slate-200 rounded-full h-2 min-w-[60px]">
+                                        <td className="px-3 py-3">
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="flex-1 bg-slate-200 rounded-full h-1.5 min-w-[50px]">
                                                     <div
-                                                        className="bg-blue-500 h-2 rounded-full transition-all"
+                                                        className="bg-blue-500 h-1.5 rounded-full transition-all"
                                                         style={{ width: `${campaign.progress}%` }}
                                                     />
                                                 </div>
-                                                <span className="text-xs font-medium text-slate-600 min-w-[35px]">
+                                                <span className="text-xs font-medium text-slate-600 min-w-[30px]">
                                                     {campaign.progress}%
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-slate-500">
+                                        <td className="px-3 py-3 text-xs text-slate-500 whitespace-nowrap">
                                             {formatDate(campaign.created_at)}
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
+                                        <td className="px-3 py-3">
+                                            <div className="flex items-center gap-1.5">
                                                 {campaign.status === 'active' ? (
                                                     <button
                                                         onClick={() => handleToggleStatus(campaign)}
                                                         className="text-orange-600 hover:text-orange-800 flex items-center gap-1"
                                                         title="Kampanyayı Duraklat"
                                                     >
-                                                        <Pause size={16} />
+                                                        <Pause size={14} />
                                                     </button>
                                                 ) : campaign.status === 'draft' ? (
                                                     <button
@@ -414,15 +406,15 @@ export default function CampaignsList() {
                                                         className="text-green-600 hover:text-green-800 flex items-center gap-1"
                                                         title="Kampanyayı Başlat"
                                                     >
-                                                        <Play size={16} />
+                                                        <Play size={14} />
                                                     </button>
                                                 ) : null}
                                                 <Link
                                                     href={`/campaigns/${campaign.id}`}
                                                     className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                                    title="Görüntüle"
                                                 >
-                                                    <Eye size={16} />
-                                                    Görüntüle
+                                                    <Eye size={14} />
                                                 </Link>
                                             </div>
                                         </td>
@@ -430,7 +422,7 @@ export default function CampaignsList() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="9" className="px-6 py-8 text-center text-slate-500">
+                                    <td colSpan="7" className="px-6 py-8 text-center text-slate-500">
                                         Kampanya bulunamadı.
                                     </td>
                                 </tr>
