@@ -16,8 +16,11 @@ export default function CampaignDetail({ id }) {
     const [userId, setUserId] = useState(null);
     const [campaign, setCampaign] = useState(null);
     const [campaignLeads, setCampaignLeads] = useState([]);
+    const [campaignGroups, setCampaignGroups] = useState([]);
+    const [groupLeads, setGroupLeads] = useState([]); // Leads from groups (lead_groups_map entries)
     const [campaignActivities, setCampaignActivities] = useState([]);
     const [leadsData, setLeadsData] = useState({}); // Map of lead_id -> lead data
+    const [groupLeadCounts, setGroupLeadCounts] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
 
@@ -66,7 +69,68 @@ export default function CampaignDetail({ id }) {
 
                 setCampaign(campaignData);
 
-                // Fetch campaign leads (from campaign_leads table - all leads are already there)
+                // Fetch campaign groups (groups added to campaign)
+                const { data: groupsData, error: groupsError } = await fetchAll('campaign_groups', '*', {
+                    campaign_id: id,
+                });
+
+                if (groupsError) {
+                    console.error('Error fetching campaign groups:', groupsError);
+                } else {
+                    setCampaignGroups(groupsData || []);
+
+                    // Fetch group details to get lead_count
+                    if (groupsData && groupsData.length > 0) {
+                        const groupIds = groupsData.map((cg) => cg.lead_group_id);
+                        const { data: groupDetails } = await fetchAll('lead_groups', '*', {
+                            id: groupIds,
+                        });
+
+                        // Fetch leads from groups via lead_groups_map (manually added to groups)
+                        if (groupDetails && groupIds.length > 0) {
+                            const { data: groupMapData } = await fetchAll('lead_groups_map', '*', {
+                                lead_group_id: groupIds,
+                            });
+
+                            if (groupMapData && groupMapData.length > 0) {
+                                // Store group leads mapping
+                                setGroupLeads(groupMapData);
+
+                                const groupLeadIds = groupMapData.map((gm) => gm.lead_id);
+                                const { data: groupLeadsDetails } = await fetchAll('leads', '*', {
+                                    id: groupLeadIds,
+                                });
+
+                                if (groupLeadsDetails) {
+                                    const leadsMap = {};
+                                    groupLeadsDetails.forEach((lead) => {
+                                        leadsMap[lead.id] = lead;
+                                    });
+                                    setLeadsData((prev) => ({ ...prev, ...leadsMap }));
+                                }
+                            }
+
+                            // Fetch leads with primary_group_id matching campaign groups (automatically added)
+                            const { data: primaryGroupLeads, error: primaryGroupLeadsError } = await fetchAll('leads', '*', {
+                                primary_group_id: groupIds,
+                                is_active: true,
+                                is_deleted: false,
+                            });
+
+                            if (primaryGroupLeadsError) {
+                                console.error('Error fetching primary group leads:', primaryGroupLeadsError);
+                            } else if (primaryGroupLeads && primaryGroupLeads.length > 0) {
+                                const leadsMap = {};
+                                primaryGroupLeads.forEach((lead) => {
+                                    leadsMap[lead.id] = lead;
+                                });
+                                setLeadsData((prev) => ({ ...prev, ...leadsMap }));
+                            }
+                        }
+                    }
+                }
+
+                // Fetch campaign leads (from campaign_leads table - individually added leads)
                 const { data: leadsData, error: leadsError } = await fetchAll('campaign_leads', '*', {
                     campaign_id: id,
                 });
@@ -88,7 +152,7 @@ export default function CampaignDetail({ id }) {
                             leadsDetails.forEach((lead) => {
                                 leadsMap[lead.id] = lead;
                             });
-                            setLeadsData(leadsMap);
+                            setLeadsData((prev) => ({ ...prev, ...leadsMap }));
                         }
                     }
                 }
@@ -118,22 +182,58 @@ export default function CampaignDetail({ id }) {
         fetchCampaignData();
     }, [id, userId]);
 
-    // Calculate progress - use total_leads from campaign if available, otherwise calculate
-    const totalLeads = campaign?.total_leads || campaignLeads.length;
+    // Fetch group lead counts
+    useEffect(() => {
+        const fetchGroupLeadCounts = async () => {
+            if (!campaignGroups || campaignGroups.length === 0) {
+                setGroupLeadCounts(0);
+                return;
+            }
+
+            try {
+                const groupIds = campaignGroups.map((cg) => cg.lead_group_id);
+                const { data: groupDetails } = await fetchAll('lead_groups', '*', {
+                    id: groupIds,
+                });
+
+                if (groupDetails) {
+                    const totalCount = groupDetails.reduce((sum, group) => sum + (group.lead_count || 0), 0);
+                    setGroupLeadCounts(totalCount);
+                }
+            } catch (error) {
+                console.error('Error fetching group lead counts:', error);
+            }
+        };
+
+        fetchGroupLeadCounts();
+    }, [campaignGroups]);
+
+    // Calculate total leads: from groups (lead_count) + individual leads
+    const totalLeads = groupLeadCounts + campaignLeads.length;
     const completedLeads = campaignActivities.filter(
-        (a) => a.activity_type === campaign?.campaign_type && a.status === 'completed'
+        (a) => a.activity_type === campaign?.campaign_type && (a.status === 'completed' || a.status === 'cancelled')
     ).length;
     const remainingLeads = totalLeads - completedLeads;
     const progress = totalLeads > 0 ? Math.round((completedLeads / totalLeads) * 100) : 0;
 
-    // Check if lead is sent (has completed activity)
+    // Check if lead is sent (has completed or cancelled activity)
     const isLeadSent = (leadId) => {
         return campaignActivities.some(
             (a) =>
                 a.lead_id === leadId &&
                 a.activity_type === campaign?.campaign_type &&
-                a.status === 'completed'
+                (a.status === 'completed' || a.status === 'cancelled')
         );
+    };
+
+    // Get lead activity status (completed, cancelled, or pending)
+    const getLeadActivityStatus = (leadId) => {
+        const activity = campaignActivities
+            .filter((a) => a.lead_id === leadId && a.activity_type === campaign?.campaign_type)
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+
+        if (!activity) return null;
+        return activity.status;
     };
 
     const getTypeColor = (type) => {
@@ -158,9 +258,9 @@ export default function CampaignDetail({ id }) {
             case 'mail':
                 return 'Email';
             case 'call':
-                return 'Call';
+                return 'Arama';
             case 'visit':
-                return 'Visit';
+                return 'Ziyaret';
             default:
                 return type || '-';
         }
@@ -184,13 +284,13 @@ export default function CampaignDetail({ id }) {
     const getStatusLabel = (status) => {
         switch (status?.toLowerCase()) {
             case 'active':
-                return 'Active';
+                return 'Devam Ediyor';
             case 'completed':
-                return 'Completed';
+                return 'Tamamlandı';
             case 'cancelled':
-                return 'Cancelled';
+                return 'İptal Edildi';
             case 'draft':
-                return 'Draft';
+                return 'Taslak';
             default:
                 return status || '-';
         }
@@ -228,7 +328,7 @@ export default function CampaignDetail({ id }) {
             <div className="p-6 flex items-center justify-center h-full">
                 <div className="flex items-center gap-2 text-slate-500">
                     <Loader2 size={20} className="animate-spin" />
-                    <span>Loading campaign...</span>
+                    <span>Kampanya yükleniyor...</span>
                 </div>
             </div>
         );
@@ -237,7 +337,7 @@ export default function CampaignDetail({ id }) {
     if (!campaign) {
         return (
             <div className="p-6">
-                <p className="text-slate-500">Campaign not found</p>
+                <p className="text-slate-500">Kampanya bulunamadı</p>
             </div>
         );
     }
@@ -268,7 +368,7 @@ export default function CampaignDetail({ id }) {
                         >
                             {getStatusLabel(campaign.status)}
                         </span>
-                        <span className="text-slate-600">{totalLeads} leads</span>
+                        <span className="text-slate-600">{totalLeads} müşteri</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -278,7 +378,7 @@ export default function CampaignDetail({ id }) {
                             className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
                         >
                             <Pause size={18} />
-                            <span>Pause</span>
+                            <span>Duraklat</span>
                         </button>
                     ) : (
                         <button
@@ -286,7 +386,7 @@ export default function CampaignDetail({ id }) {
                             className="flex items-center gap-2 px-4 py-2 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors"
                         >
                             <Play size={18} />
-                            <span>Start</span>
+                            <span>Başlat</span>
                         </button>
                     )}
                 </div>
@@ -295,18 +395,26 @@ export default function CampaignDetail({ id }) {
             {/* Tabs */}
             <div className="border-b border-slate-200">
                 <nav className="flex space-x-8">
-                    {['overview', 'leads', 'activity', 'template'].map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm capitalize ${activeTab === tab
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                                }`}
-                        >
-                            {tab}
-                        </button>
-                    ))}
+                    {['overview', 'leads', 'activity', 'template'].map((tab) => {
+                        const tabLabels = {
+                            overview: 'Genel Bakış',
+                            leads: 'Müşteriler',
+                            activity: 'Aktivite',
+                            template: 'Şablon'
+                        };
+                        return (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`py-4 px-1 border-b-2 font-medium text-sm capitalize ${activeTab === tab
+                                    ? 'border-blue-500 text-blue-600'
+                                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                                    }`}
+                            >
+                                {tabLabels[tab]}
+                            </button>
+                        );
+                    })}
                 </nav>
             </div>
 
@@ -316,7 +424,7 @@ export default function CampaignDetail({ id }) {
                     <div className="space-y-6">
                         <div>
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-slate-600">Progress</span>
+                                <span className="text-sm text-slate-600">İlerleme</span>
                                 <span className="text-sm font-medium text-slate-800">
                                     {completedLeads} / {totalLeads}
                                 </span>
@@ -331,15 +439,15 @@ export default function CampaignDetail({ id }) {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="p-4 bg-slate-50 rounded-xl">
-                                <p className="text-sm text-slate-500 mb-1">Total Leads</p>
+                                <p className="text-sm text-slate-500 mb-1">Toplam Müşteri</p>
                                 <p className="text-2xl font-bold text-slate-800">{totalLeads}</p>
                             </div>
                             <div className="p-4 bg-green-50 rounded-xl">
-                                <p className="text-sm text-slate-500 mb-1">Sent</p>
+                                <p className="text-sm text-slate-500 mb-1">Gönderilen</p>
                                 <p className="text-2xl font-bold text-green-600">{completedLeads}</p>
                             </div>
                             <div className="p-4 bg-orange-50 rounded-xl">
-                                <p className="text-sm text-slate-500 mb-1">Remaining</p>
+                                <p className="text-sm text-slate-500 mb-1">Kalan</p>
                                 <p className="text-2xl font-bold text-orange-600">{remainingLeads}</p>
                             </div>
                         </div>
@@ -352,79 +460,112 @@ export default function CampaignDetail({ id }) {
                             <thead className="bg-slate-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                        Lead Name
+                                        Müşteri Adı
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                        Status
+                                        Durum
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                        Last Activity
+                                        Son İşlem
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                                        Actions
+                                        İşlemler
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200">
-                                {campaignLeads.length > 0 ? (
-                                    campaignLeads.map((campaignLead) => {
-                                        const lead = leadsData[campaignLead.lead_id];
-                                        const isSent = isLeadSent(campaignLead.lead_id);
-                                        const leadActivity = campaignActivities
-                                            .filter((a) => a.lead_id === campaignLead.lead_id)
-                                            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+                                {(() => {
+                                    // Combine leads from all sources (campaign_leads, lead_groups_map, and primary_group_id)
+                                    const allLeadIds = new Set();
 
+                                    // Add individual leads (from campaign_leads table)
+                                    campaignLeads.forEach((cl) => {
+                                        allLeadIds.add(cl.lead_id);
+                                    });
+
+                                    // Add group leads from lead_groups_map (manually added to groups)
+                                    groupLeads.forEach((gl) => {
+                                        allLeadIds.add(gl.lead_id);
+                                    });
+
+                                    // Add leads with primary_group_id matching campaign groups (automatically added)
+                                    if (campaignGroups && campaignGroups.length > 0) {
+                                        const groupIds = campaignGroups.map((cg) => cg.lead_group_id);
+                                        Object.values(leadsData).forEach((lead) => {
+                                            if (lead.primary_group_id && groupIds.includes(lead.primary_group_id)) {
+                                                allLeadIds.add(lead.id);
+                                            }
+                                        });
+                                    }
+
+                                    const uniqueLeadIds = Array.from(allLeadIds);
+
+                                    if (uniqueLeadIds.length > 0) {
+                                        return uniqueLeadIds.map((leadId) => {
+                                            const lead = leadsData[leadId];
+                                            const activityStatus = getLeadActivityStatus(leadId);
+                                            const leadActivity = campaignActivities
+                                                .filter((a) => a.lead_id === leadId && a.activity_type === campaign?.campaign_type)
+                                                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+
+                                            return (
+                                                <tr key={leadId} className="hover:bg-slate-50">
+                                                    <td className="px-6 py-4">
+                                                        {lead ? (
+                                                            <Link
+                                                                href={`/leads/${lead.id}`}
+                                                                className="font-medium text-slate-800 hover:text-blue-600"
+                                                            >
+                                                                {lead.company || lead.name || 'Unknown'}
+                                                            </Link>
+                                                        ) : (
+                                                            <span className="text-slate-400">Yükleniyor...</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        {activityStatus === 'completed' ? (
+                                                            <span className="px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
+                                                                Gönderilen
+                                                            </span>
+                                                        ) : activityStatus === 'cancelled' ? (
+                                                            <span className="px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium">
+                                                                İptal
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-lg text-xs font-medium">
+                                                                Beklemede
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-slate-500">
+                                                        {leadActivity
+                                                            ? formatTimeAgo(leadActivity.created_at)
+                                                            : '-'}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        {lead && (
+                                                            <Link
+                                                                href={`/leads/${lead.id}`}
+                                                                className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                                                            >
+                                                                <Eye size={16} />
+                                                                Görüntüle
+                                                            </Link>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        });
+                                    } else {
                                         return (
-                                            <tr key={campaignLead.id} className="hover:bg-slate-50">
-                                                <td className="px-6 py-4">
-                                                    {lead ? (
-                                                        <Link
-                                                            href={`/leads/${lead.id}`}
-                                                            className="font-medium text-slate-800 hover:text-blue-600"
-                                                        >
-                                                            {lead.company || lead.name || 'Unknown'}
-                                                        </Link>
-                                                    ) : (
-                                                        <span className="text-slate-400">Loading...</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {isSent ? (
-                                                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
-                                                            Sent
-                                                        </span>
-                                                    ) : (
-                                                        <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-lg text-xs font-medium">
-                                                            Pending
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">
-                                                    {leadActivity
-                                                        ? formatTimeAgo(leadActivity.created_at)
-                                                        : '-'}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    {lead && (
-                                                        <Link
-                                                            href={`/leads/${lead.id}`}
-                                                            className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                                        >
-                                                            <Eye size={16} />
-                                                            View
-                                                        </Link>
-                                                    )}
+                                            <tr>
+                                                <td colSpan="4" className="px-6 py-8 text-center text-slate-500">
+                                                    Müşteri bulunamadı
                                                 </td>
                                             </tr>
                                         );
-                                    })
-                                ) : (
-                                    <tr>
-                                        <td colSpan="4" className="px-6 py-8 text-center text-slate-500">
-                                            No leads found
-                                        </td>
-                                    </tr>
-                                )}
+                                    }
+                                })()}
                             </tbody>
                         </table>
                     </div>
@@ -458,17 +599,23 @@ export default function CampaignDetail({ id }) {
                                             <span
                                                 className={`px-2 py-1 rounded text-xs font-medium ${activity.status === 'completed'
                                                     ? 'bg-green-100 text-green-700'
-                                                    : 'bg-orange-100 text-orange-700'
+                                                    : activity.status === 'cancelled'
+                                                        ? 'bg-red-100 text-red-700'
+                                                        : 'bg-orange-100 text-orange-700'
                                                     }`}
                                             >
-                                                {activity.status === 'completed' ? 'Completed' : 'Pending'}
+                                                {activity.status === 'completed'
+                                                    ? 'Tamamlandı'
+                                                    : activity.status === 'cancelled'
+                                                        ? 'İptal'
+                                                        : 'Beklemede'}
                                             </span>
                                         </div>
                                     </div>
                                 );
                             })
                         ) : (
-                            <p className="text-slate-500 text-center py-8">No activity yet</p>
+                            <p className="text-slate-500 text-center py-8">Henüz işlem yok</p>
                         )}
                     </div>
                 )}
@@ -478,7 +625,7 @@ export default function CampaignDetail({ id }) {
                         {campaign.title && (
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Title
+                                    Başlık
                                 </label>
                                 <div className="p-4 bg-slate-50 rounded-xl">
                                     <p className="text-slate-800">{campaign.title}</p>
@@ -487,7 +634,7 @@ export default function CampaignDetail({ id }) {
                         )}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Content
+                                İçerik
                             </label>
                             <div className="p-4 bg-slate-50 rounded-xl">
                                 <p className="text-slate-800 whitespace-pre-wrap">
@@ -496,7 +643,7 @@ export default function CampaignDetail({ id }) {
                             </div>
                         </div>
                         <p className="text-xs text-slate-400">
-                            Merge tags: {'{'}company_name{'}'}, {'{'}city{'}'}, {'{'}district{'}'}
+                            Birleştirme etiketleri: {'{'}company_name{'}'}, {'{'}city{'}'}, {'{'}district{'}'}
                         </p>
                     </div>
                 )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -34,11 +34,40 @@ const bottomMenuItems = [
 ];
 
 export default function Sidebar({ onCollapseChange }) {
+    // Always start with false to avoid hydration mismatch
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const pathname = usePathname();
+    const onCollapseChangeRef = useRef(onCollapseChange);
+
+    // Keep ref updated
+    useEffect(() => {
+        onCollapseChangeRef.current = onCollapseChange;
+    }, [onCollapseChange]);
 
     const isExpanded = isHovered || !isCollapsed;
+
+    // Load collapsed state from localStorage on mount (client-side only)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('sidebarCollapsed');
+            if (saved === 'true') {
+                setIsCollapsed(true);
+                // Notify parent component about the initial state
+                if (onCollapseChangeRef.current) {
+                    onCollapseChangeRef.current(true);
+                }
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Save collapsed state to localStorage whenever it changes
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
+        }
+    }, [isCollapsed]);
 
     // Notify parent about collapse state changes
     const handleCollapseToggle = () => {
@@ -63,17 +92,17 @@ export default function Sidebar({ onCollapseChange }) {
                         <div className="flex items-center gap-3">
                             <Image
                                 src="/logo.png"
-                                alt="LeadCenter"
+                                alt="Veriburada - Müşteri Merkezi"
                                 width={32}
                                 height={32}
                                 className="rounded-lg"
                             />
-                            <span className="font-semibold text-slate-800">Veri Burada</span>
+                            <span className="font-semibold text-slate-800">Veriburada CRM</span>
                         </div>
                     ) : (
                         <Image
                             src="/logo.png"
-                            alt="Veri Burada Logo"
+                            alt="Veriburada müşteri merkezi Logo"
                             width={32}
                             height={32}
                             className="rounded-lg mx-auto"

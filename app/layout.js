@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "LeadCenter",
-  description: "LeadCenter - Complete CRM dashboard for LeadGun",
+  title: "Veriburada - Müşteri Merkezi",
+  description: "Veriburada - Müşteri Merkez",
 };
 
 export default function RootLayout({ children }) {

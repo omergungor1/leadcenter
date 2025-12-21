@@ -129,7 +129,7 @@ export default function AccountPage() {
             <div className="p-6 flex items-center justify-center h-full">
                 <div className="flex items-center gap-2 text-slate-500">
                     <Loader2 size={20} className="animate-spin" />
-                    <span>Loading...</span>
+                    <span>Yükleniyor...</span>
                 </div>
             </div>
         );
@@ -137,7 +137,7 @@ export default function AccountPage() {
 
     return (
         <div className="p-6 space-y-6">
-            <h1 className="text-3xl font-bold text-slate-800">Account</h1>
+            <h1 className="text-3xl font-bold text-slate-800">Hesap</h1>
 
             {/* Current Plan & Credits Summary */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -148,8 +148,8 @@ export default function AccountPage() {
                             <CreditCard size={24} className="text-blue-600" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-slate-800">Current Plan</h2>
-                            <p className="text-sm text-slate-500">Your active subscription</p>
+                            <h2 className="text-lg font-semibold text-slate-800">Aktif Plan</h2>
+                            <p className="text-sm text-slate-500">Aktif aboneliğiniz</p>
                         </div>
                     </div>
 
@@ -158,29 +158,29 @@ export default function AccountPage() {
                             <div>
                                 <p className="text-2xl font-bold text-slate-800">{currentPlan.name}</p>
                                 <p className="text-sm text-slate-500 mt-1">
-                                    {currentPlan.monthly_credits} credits/month
+                                    {currentPlan.monthly_credits} kredi/ay
                                 </p>
                             </div>
                             <div className="flex items-center justify-between pt-3 border-t border-slate-200">
-                                <span className="text-sm text-slate-600">Price</span>
+                                <span className="text-sm text-slate-600">Fiyat</span>
                                 <span className="text-lg font-semibold text-slate-800">
-                                    ₺{currentPlan.price.toFixed(0)}/month
+                                    ₺{currentPlan.price.toFixed(0)}/ay
                                 </span>
                             </div>
                             {userData?.subscription_end && (
                                 <div className="flex items-center gap-2 text-sm text-slate-500">
                                     <Calendar size={16} />
                                     <span>
-                                        Expires: {formatDate(userData.subscription_end)}
+                                        Son kullanma tarihi: {formatDate(userData.subscription_end)}
                                     </span>
                                 </div>
                             )}
                         </div>
                     ) : (
                         <div className="py-4">
-                            <p className="text-slate-500">No active plan</p>
+                            <p className="text-slate-500">Aktif plan yok</p>
                             <p className="text-sm text-slate-400 mt-1">
-                                Select a plan below to get started
+                                Aşağıdaki planlardan birini seçerek başlayınız
                             </p>
                         </div>
                     )}
@@ -193,25 +193,25 @@ export default function AccountPage() {
                             <Package size={24} className="text-green-600" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-slate-800">Credits</h2>
-                            <p className="text-sm text-slate-500">Your credit balance</p>
+                            <h2 className="text-lg font-semibold text-slate-800">Krediler</h2>
+                            <p className="text-sm text-slate-500">Kredi bakiyeniz</p>
                         </div>
                     </div>
 
                     <div className="space-y-3">
                         <div>
                             <p className="text-3xl font-bold text-slate-800">{remainingCredits}</p>
-                            <p className="text-sm text-slate-500 mt-1">Remaining credits</p>
+                            <p className="text-sm text-slate-500 mt-1">Kalan krediler</p>
                         </div>
                         <div className="pt-3 border-t border-slate-200 space-y-2">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-600">Monthly Limit</span>
+                                <span className="text-slate-600">Aylık Limit</span>
                                 <span className="font-medium text-slate-800">
                                     {userData?.monthly_credit_limit || 0}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-600">Used This Month</span>
+                                <span className="text-slate-600">Bu Ay Kullanılan Krediler</span>
                                 <span className="font-medium text-slate-800">
                                     {userData?.monthly_credits_used || 0}
                                 </span>
@@ -225,7 +225,7 @@ export default function AccountPage() {
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                     <CreditCard size={24} className="text-slate-700" />
-                    <h2 className="text-xl font-semibold text-slate-800">Subscription Plans</h2>
+                    <h2 className="text-xl font-semibold text-slate-800">Abonelik Planları</h2>
                 </div>
 
                 {plans.length > 0 ? (
@@ -244,7 +244,7 @@ export default function AccountPage() {
                                         <div className="absolute top-4 right-4">
                                             <div className="px-2 py-1 bg-blue-500 text-white rounded-lg text-xs font-medium flex items-center gap-1">
                                                 <Check size={14} />
-                                                Current
+                                                Aktif
                                             </div>
                                         </div>
                                     )}
@@ -256,14 +256,14 @@ export default function AccountPage() {
                                             <span className="text-3xl font-bold text-slate-800">
                                                 ₺{plan.price.toFixed(0)}
                                             </span>
-                                            <span className="text-slate-500">/month</span>
+                                            <span className="text-slate-500">/ay</span>
                                         </div>
                                     </div>
                                     <div className="space-y-3 mb-6">
                                         <div className="flex items-center gap-2">
                                             <Package size={18} className="text-slate-400" />
                                             <span className="text-sm text-slate-600">
-                                                {plan.monthly_credits} credits/month
+                                                {plan.monthly_credits} kredi/ay
                                             </span>
                                         </div>
                                     </div>
@@ -274,14 +274,14 @@ export default function AccountPage() {
                                             }`}
                                         disabled={isCurrentPlan}
                                     >
-                                        {isCurrentPlan ? 'Current Plan' : 'Select Plan'}
+                                        {isCurrentPlan ? 'Aktif Plan' : 'Plan Seçin'}
                                     </button>
                                 </div>
                             );
                         })}
                     </div>
                 ) : (
-                    <p className="text-slate-500 text-center py-8">No plans available</p>
+                    <p className="text-slate-500 text-center py-8">Plan yok</p>
                 )}
             </div>
 
@@ -289,7 +289,7 @@ export default function AccountPage() {
             <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                     <Package size={24} className="text-slate-700" />
-                    <h2 className="text-xl font-semibold text-slate-800">Credit Packages</h2>
+                    <h2 className="text-xl font-semibold text-slate-800">Kredi Paketleri</h2>
                 </div>
 
                 {creditPackages.length > 0 ? (
@@ -313,21 +313,21 @@ export default function AccountPage() {
                                     <div className="flex items-center gap-2">
                                         <Package size={18} className="text-slate-400" />
                                         <span className="text-sm text-slate-600">
-                                            {pkg.credits} credits
+                                            {pkg.credits} kredi
                                         </span>
                                     </div>
                                     <div className="text-xs text-slate-500">
-                                        ₺{(pkg.price / pkg.credits).toFixed(3)} per credit
+                                        ₺{(pkg.price / pkg.credits).toFixed(3)}/1 kredi
                                     </div>
                                 </div>
                                 <button className="w-full py-2.5 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors">
-                                    Purchase
+                                    Satın Al
                                 </button>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p className="text-slate-500 text-center py-8">No credit packages available</p>
+                    <p className="text-slate-500 text-center py-8">Kredi paketi yok</p>
                 )}
             </div>
         </div>

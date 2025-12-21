@@ -474,14 +474,6 @@ export default function LeadDetail({ id }) {
         }
     };
 
-    if (!lead) {
-        return (
-            <div className="p-6">
-                <p className="text-slate-500">Lead not found</p>
-            </div>
-        );
-    }
-
     const getActivityIcon = (type) => {
         switch (type?.toLowerCase()) {
             case 'note':
@@ -511,7 +503,7 @@ export default function LeadDetail({ id }) {
     if (authLoading || isLoading) {
         return (
             <div className="p-6 flex items-center justify-center h-full">
-                <div className="text-slate-500">Loading...</div>
+                <div className="text-slate-500">Yükleniyor...</div>
             </div>
         );
     }
@@ -519,7 +511,7 @@ export default function LeadDetail({ id }) {
     if (!lead) {
         return (
             <div className="p-6">
-                <p className="text-slate-500">Lead not found</p>
+                <p className="text-slate-500">Müşteri bulunamadı</p>
             </div>
         );
     }
@@ -553,7 +545,7 @@ export default function LeadDetail({ id }) {
                                         handleToggleFavorite();
                                     }}
                                     className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-lg hover:bg-slate-50 transition-colors z-10"
-                                    title={lead.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+                                    title={lead.is_favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
                                 >
                                     <Heart
                                         size={20}
@@ -589,7 +581,7 @@ export default function LeadDetail({ id }) {
                                             )}
                                             {lead.review_count && (
                                                 <span className="text-sm text-slate-500">
-                                                    ({lead.review_count} {lead.review_count === 1 ? 'review' : 'reviews'})
+                                                    ({lead.review_count} {lead.review_count === 1 ? 'görüş' : 'görüş'})
                                                 </span>
                                             )}
                                         </div>
@@ -601,7 +593,7 @@ export default function LeadDetail({ id }) {
                                         <button
                                             onClick={handleToggleFavorite}
                                             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                                            title={lead.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+                                            title={lead.is_favorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
                                         >
                                             <Heart
                                                 size={18}
@@ -620,7 +612,7 @@ export default function LeadDetail({ id }) {
                                     <div className="flex items-start gap-3">
                                         <MapPin size={18} className="text-slate-400 mt-1" />
                                         <div>
-                                            <p className="text-sm text-slate-500">Address</p>
+                                            <p className="text-sm text-slate-500">Adres</p>
                                             <p className="text-slate-800">{lead.address}</p>
                                         </div>
                                     </div>
@@ -630,7 +622,7 @@ export default function LeadDetail({ id }) {
                                     <div className="flex items-start gap-3">
                                         <Phone size={18} className="text-slate-400 mt-1" />
                                         <div className="flex-1 space-y-2">
-                                            <p className="text-sm text-slate-500">Phone{leadPhones.length > 1 ? 's' : ''}</p>
+                                            <p className="text-sm text-slate-500">Telefon{leadPhones.length > 1 ? 'lar' : ''}</p>
                                             {leadPhones.map((phoneItem) => (
                                                 <div key={phoneItem.id} className="flex items-center gap-2 flex-wrap">
                                                     <p className="text-slate-800">{formatPhoneNumber(phoneItem.phone)}</p>
@@ -648,26 +640,16 @@ export default function LeadDetail({ id }) {
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="relative group"
-                                                                title="WhatsApp ile mesaj gönder"
+                                                                title="WhatsApp ile mesaj gönderin"
                                                             >
                                                                 <Image
                                                                     src="/wp-icon.png"
                                                                     alt="WhatsApp"
-                                                                    width={20}
-                                                                    height={20}
+                                                                    width={25}
+                                                                    height={25}
                                                                     className="rounded cursor-pointer hover:opacity-80 transition-opacity"
                                                                 />
                                                             </a>
-                                                            <button
-                                                                onClick={() => {
-                                                                    setSelectedActionType('whatsapp');
-                                                                    setShowQuickActionPanel(true);
-                                                                }}
-                                                                className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                                                                title="Yeni WhatsApp mesajı"
-                                                            >
-                                                                Mesaj
-                                                            </button>
                                                         </div>
                                                     )}
                                                 </div>
@@ -680,7 +662,7 @@ export default function LeadDetail({ id }) {
                                     <div className="flex items-start gap-3">
                                         <Mail size={18} className="text-slate-400 mt-1" />
                                         <div className="flex-1 space-y-2">
-                                            <p className="text-sm text-slate-500">Email{leadEmails.length > 1 ? 's' : ''}</p>
+                                            <p className="text-sm text-slate-500">Email{leadEmails.length > 1 ? 'ler' : ''}</p>
                                             {leadEmails.map((emailItem) => (
                                                 <p key={emailItem.id} className="text-slate-800">
                                                     {emailItem.email}
@@ -694,7 +676,7 @@ export default function LeadDetail({ id }) {
                                     <div className="flex items-start gap-3">
                                         <Globe size={18} className="text-slate-400 mt-1" />
                                         <div>
-                                            <p className="text-sm text-slate-500">Website</p>
+                                            <p className="text-sm text-slate-500">Web Sitesi</p>
                                             <a
                                                 href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
                                                 target="_blank"
@@ -728,7 +710,7 @@ export default function LeadDetail({ id }) {
                                             <div className="flex items-center gap-2">
                                                 <Clock size={18} className="text-slate-400" />
                                                 <div className="text-left">
-                                                    <p className="text-sm font-medium text-slate-700">Working Hours</p>
+                                                    <p className="text-sm font-medium text-slate-700">Çalışma Saatleri</p>
                                                     <p className="text-xs text-slate-500">
                                                         {todayInTurkish}: {lead.working_hours[todayInTurkish] || 'Bilinmiyor'}
                                                     </p>
@@ -771,7 +753,7 @@ export default function LeadDetail({ id }) {
                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden">
                         {/* Timeline Header */}
                         <div className="px-6 py-4 border-b border-slate-200 flex-shrink-0">
-                            <h3 className="text-lg font-semibold text-slate-800">Activity Timeline</h3>
+                            <h3 className="text-lg font-semibold text-slate-800">Aktivite Zaman Çizelgesi</h3>
                         </div>
 
                         {/* Timeline Content - Scrollable */}
@@ -844,7 +826,13 @@ export default function LeadDetail({ id }) {
                                                                         {activity.status === 'pending' && (
                                                                             <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-100 rounded-lg flex-shrink-0">
                                                                                 <Hourglass size={14} className="text-amber-600 animate-pulse" />
-                                                                                <span className="text-xs font-medium text-amber-700">Pending</span>
+                                                                                <span className="text-xs font-medium text-amber-700">Beklemede</span>
+                                                                            </div>
+                                                                        )}
+                                                                        {activity.status === 'cancelled' && (
+                                                                            <div className="flex items-center gap-1.5 px-2 py-1 bg-red-100 rounded-lg flex-shrink-0">
+                                                                                <X size={14} className="text-red-600 animate-pulse" />
+                                                                                <span className="text-xs font-medium text-red-700">İptal</span>
                                                                             </div>
                                                                         )}
                                                                         {activity.status === 'pending' && activity.due_date && (
@@ -871,7 +859,7 @@ export default function LeadDetail({ id }) {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-slate-500 text-center py-8">No activities yet</p>
+                                    <p className="text-slate-500 text-center py-8">Henüz işlem yok</p>
                                 )}
                             </div>
                         </div>
@@ -882,7 +870,7 @@ export default function LeadDetail({ id }) {
                 <div className="col-span-12 lg:col-span-3 space-y-4 overflow-hidden">
                     {/* Quick Actions */}
                     <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                        <h3 className="font-semibold text-slate-800 mb-4">Quick Actions</h3>
+                        <h3 className="font-semibold text-slate-800 mb-4">Hızlı İşlemler</h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             <button
                                 onClick={() => {
@@ -894,7 +882,7 @@ export default function LeadDetail({ id }) {
                                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                                     <FileText size={20} className="text-blue-600" />
                                 </div>
-                                <span className="text-xs font-medium text-slate-700">Note</span>
+                                <span className="text-xs font-medium text-slate-700">Not</span>
                             </button>
                             <button
                                 onClick={() => {
@@ -918,7 +906,7 @@ export default function LeadDetail({ id }) {
                                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                                     <PhoneCall size={20} className="text-purple-600" />
                                 </div>
-                                <span className="text-xs font-medium text-slate-700">Call</span>
+                                <span className="text-xs font-medium text-slate-700">Telefon</span>
                             </button>
                             <button
                                 onClick={() => {
@@ -930,7 +918,7 @@ export default function LeadDetail({ id }) {
                                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                                     <MessageSquare size={20} className="text-green-600" />
                                 </div>
-                                <span className="text-xs font-medium text-slate-700">Wp</span>
+                                <span className="text-xs font-medium text-slate-700">WhatsApp</span>
                             </button>
                             <button
                                 onClick={() => {
@@ -942,7 +930,7 @@ export default function LeadDetail({ id }) {
                                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                                     <MapPin size={20} className="text-orange-600" />
                                 </div>
-                                <span className="text-xs font-medium text-slate-700">Visit</span>
+                                <span className="text-xs font-medium text-slate-700">Ziyaret</span>
                             </button>
                             <button
                                 onClick={() => {
@@ -954,7 +942,7 @@ export default function LeadDetail({ id }) {
                                 <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                                     <CheckSquare size={20} className="text-orange-600" />
                                 </div>
-                                <span className="text-xs font-medium text-slate-700">Task</span>
+                                <span className="text-xs font-medium text-slate-700">Görev</span>
                             </button>
                             <button
                                 onClick={() => {
@@ -966,7 +954,7 @@ export default function LeadDetail({ id }) {
                                 <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
                                     <Calendar size={20} className="text-indigo-600" />
                                 </div>
-                                <span className="text-xs font-medium text-slate-700">Meeting</span>
+                                <span className="text-xs font-medium text-slate-700">Toplantı</span>
                             </button>
                             <button
                                 onClick={() => {
@@ -978,13 +966,13 @@ export default function LeadDetail({ id }) {
                                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
                                     <CheckSquare size={20} className="text-yellow-600" />
                                 </div>
-                                <span className="text-xs font-medium text-slate-700">Todo</span>
+                                <span className="text-xs font-medium text-slate-700">Yapılacaklar</span>
                             </button>
                         </div>
                     </div>
                     {/* Lead Groups */}
                     <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                        <p className="text-sm font-medium text-slate-700 mb-3">Belongs to Lead Groups</p>
+                        <p className="text-sm font-medium text-slate-700 mb-3">Müşteri Gruplarına Ait</p>
                         <div className="space-y-2">
                             {leadGroups.length > 0 ? (
                                 leadGroups.map((group) => {
@@ -999,7 +987,7 @@ export default function LeadDetail({ id }) {
                                                 <span>{group.name}</span>
                                                 {isPrimary && (
                                                     <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
-                                                        Primary
+                                                        Ana Grup
                                                     </span>
                                                 )}
                                             </div>
@@ -1007,14 +995,14 @@ export default function LeadDetail({ id }) {
                                     );
                                 })
                             ) : (
-                                <p className="text-sm text-slate-400">No groups assigned</p>
+                                <p className="text-sm text-slate-400">Grup atanmamış</p>
                             )}
                         </div>
                     </div>
 
                     {/* Campaigns */}
                     <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                        <p className="text-sm font-medium text-slate-700 mb-3">Campaigns</p>
+                        <p className="text-sm font-medium text-slate-700 mb-3">Kampanyalar</p>
                         {leadCampaigns.length > 0 ? (
                             <div className="space-y-2">
                                 {leadCampaigns.map((campaign) => {
@@ -1066,20 +1054,20 @@ export default function LeadDetail({ id }) {
                                 })}
                             </div>
                         ) : (
-                            <p className="text-sm text-slate-400">No campaigns yet</p>
+                            <p className="text-sm text-slate-400">Henüz kampanya yok</p>
                         )}
                     </div>
 
                     {/* Tags */}
                     <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
                         <div className="flex items-center justify-between mb-3">
-                            <p className="text-sm font-medium text-slate-700">Tags</p>
+                            <p className="text-sm font-medium text-slate-700">Etiketler</p>
                             <div className="relative" data-tag-dropdown>
                                 <button
                                     data-tag-button
                                     onClick={() => setShowTagDropdown(!showTagDropdown)}
                                     className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
-                                    title="Add tag"
+                                    title="Etiket ekle"
                                 >
                                     <Plus size={16} className="text-slate-600" />
                                 </button>
@@ -1124,7 +1112,7 @@ export default function LeadDetail({ id }) {
                                                 </div>
                                             ) : (
                                                 <p className="text-sm text-slate-400 p-3 text-center">
-                                                    No tags available. Create tags in Settings.
+                                                    Etiket yok. Etiketleri ayarlardan oluşturun.
                                                 </p>
                                             )}
                                         </div>
@@ -1147,14 +1135,14 @@ export default function LeadDetail({ id }) {
                                         <button
                                             onClick={() => handleRemoveTag(tag.id)}
                                             className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-black/10 rounded"
-                                            title="Remove tag"
+                                            title="Etiket sil"
                                         >
                                             <X size={12} />
                                         </button>
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-sm text-slate-400">No tags assigned</p>
+                                <p className="text-sm text-slate-400">Etiket atanmamış</p>
                             )}
                         </div>
                     </div>
@@ -1205,7 +1193,7 @@ export default function LeadDetail({ id }) {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-semibold text-slate-800">Edit Activity</h3>
+                            <h3 className="text-xl font-semibold text-slate-800">İşlem Düzenle</h3>
                             <button
                                 onClick={() => setEditingActivity(null)}
                                 className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
@@ -1217,7 +1205,7 @@ export default function LeadDetail({ id }) {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Content
+                                    İçerik
                                 </label>
                                 <textarea
                                     value={editingActivity.content || ''}
@@ -1226,7 +1214,7 @@ export default function LeadDetail({ id }) {
                                     }
                                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                                     rows={4}
-                                    placeholder="Activity content..."
+                                    placeholder="İşlem içeriği..."
                                 />
                             </div>
 
@@ -1240,7 +1228,7 @@ export default function LeadDetail({ id }) {
                                     className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                                 >
                                     <Edit size={16} />
-                                    Save Changes
+                                    Değişiklikleri Kaydet
                                 </button>
                                 {editingActivity.status === 'pending' && (
                                     <button
@@ -1255,7 +1243,7 @@ export default function LeadDetail({ id }) {
                                         className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all font-medium shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                                     >
                                         <CheckCircle size={16} />
-                                        Complete
+                                        Tamamla
                                     </button>
                                 )}
                                 <button
@@ -1270,7 +1258,7 @@ export default function LeadDetail({ id }) {
                                     className="px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all font-medium shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                                 >
                                     <Trash2 size={16} />
-                                    Delete
+                                    Sil
                                 </button>
                             </div>
                         </div>
@@ -1293,12 +1281,12 @@ export default function LeadDetail({ id }) {
                     >
                         <div className="mb-6">
                             <h3 className="text-xl font-semibold text-slate-800 mb-2">
-                                {confirmAction.type === 'delete' ? 'Delete Activity' : 'Mark as Completed'}
+                                {confirmAction.type === 'delete' ? 'İşlem Sil' : 'İşlem Tamamlandı'}
                             </h3>
                             <p className="text-slate-600">
                                 {confirmAction.type === 'delete'
-                                    ? 'Are you sure you want to delete this activity? This action cannot be undone.'
-                                    : 'Are you sure you want to mark this activity as completed?'}
+                                    ? 'Bu işlemi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'
+                                    : 'Bu işlemi tamamlamak istediğinize emin misiniz?'}
                             </p>
                         </div>
 
@@ -1310,7 +1298,7 @@ export default function LeadDetail({ id }) {
                                 }}
                                 className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors font-medium"
                             >
-                                Cancel
+                                İptal
                             </button>
                             <button
                                 onClick={handleConfirmAction}
@@ -1319,7 +1307,7 @@ export default function LeadDetail({ id }) {
                                     : 'bg-green-600 hover:bg-green-700'
                                     }`}
                             >
-                                {confirmAction.type === 'delete' ? 'Delete' : 'Mark as Completed'}
+                                {confirmAction.type === 'delete' ? 'Sil' : 'Tamamla'}
                             </button>
                         </div>
                     </div>
@@ -1345,7 +1333,7 @@ export default function LeadDetail({ id }) {
                         >
                             <Image
                                 src={lead.profile_image_url}
-                                alt={lead.company || lead.name || 'Company'}
+                                alt={lead.company || lead.name || 'Şirket'}
                                 fill
                                 className="object-contain rounded-lg"
                                 sizes="90vw"

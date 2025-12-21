@@ -348,7 +348,7 @@ export async function POST(request, { params }) {
                     .range(offset, offset + BATCH_SIZE - 1);
 
                 if (leadsError) {
-                    throw new Error(`Leads çekilirken hata: ${leadsError.message}`);
+                    throw new Error(`Müşteriler çekilirken hata: ${leadsError.message}`);
                 }
 
                 if (leads && leads.length > 0) {

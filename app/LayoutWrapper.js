@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from "../components/layout/Sidebar";
 import TopBar from "../components/layout/TopBar";
@@ -8,6 +8,8 @@ import TopBar from "../components/layout/TopBar";
 export default function LayoutWrapper({ children }) {
     const pathname = usePathname();
     const isLoginPage = pathname === '/login';
+    // Always start with false to avoid hydration mismatch
+    // Sidebar will notify us via onCollapseChange callback when it loads from localStorage
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     // Don't show sidebar and topbar on login page

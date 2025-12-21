@@ -52,10 +52,10 @@ export default function LoginPage() {
 
                     {/* Title */}
                     <h1 className="text-2xl font-bold text-slate-800 text-center mb-2">
-                        Welcome Back
+                        Hoş Geldiniz
                     </h1>
                     <p className="text-sm text-slate-500 text-center mb-8">
-                        Sign in to your account to continue
+                        Hesabınıza giriş yapınız
                     </p>
 
                     {/* Error Message */}
@@ -70,7 +70,7 @@ export default function LoginPage() {
                         {/* Email Field */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Email Address
+                                Email Adresi
                             </label>
                             <div className="relative">
                                 <Mail
@@ -83,7 +83,7 @@ export default function LoginPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                     className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="you@example.com"
+                                    placeholder="email@example.com"
                                     disabled={loading}
                                 />
                             </div>
@@ -92,7 +92,7 @@ export default function LoginPage() {
                         {/* Password Field */}
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                Password
+                                Şifre
                             </label>
                             <div className="relative">
                                 <Lock
@@ -105,7 +105,7 @@ export default function LoginPage() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
                                     className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Enter your password"
+                                    placeholder="Şifrenizi giriniz"
                                     disabled={loading}
                                 />
                             </div>
@@ -120,10 +120,10 @@ export default function LoginPage() {
                             {loading ? (
                                 <>
                                     <Loader2 size={18} className="animate-spin" />
-                                    <span>Signing in...</span>
+                                    <span>Giriş yapılıyor...</span>
                                 </>
                             ) : (
-                                <span>Sign In</span>
+                                <span>Giriş Yap</span>
                             )}
                         </button>
                     </form>
@@ -131,7 +131,7 @@ export default function LoginPage() {
 
                 {/* Footer */}
                 <p className="text-center text-sm text-slate-500 mt-6">
-                    Don't have an account? Contact your administrator.
+                    Hesabınız yok mu? Yöneticinizle iletişime geçiniz.
                 </p>
             </div>
         </div>

@@ -291,8 +291,9 @@ CREATE TABLE lead_phones (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     lead_id UUID REFERENCES leads(id) ON DELETE CASCADE,
     phone TEXT NOT NULL,
-    has_whatsapp BOOLEAN DEFAULT FALSE,
+    has_whatsapp BOOLEAN DEFAULT NULL,
     source TEXT, -- örn: 'website', 'map', 'manual'
+    is_primary BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMP DEFAULT NOW()
 );
 

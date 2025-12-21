@@ -81,7 +81,7 @@ export default function CreateCampaign() {
                 setLeadGroups(groupsData || []);
             } catch (error) {
                 console.error('Error:', error);
-                toast.error('Error loading data');
+                toast.error('Veriler yüklenirken bir hata oluştu');
             } finally {
                 setIsLoading(false);
             }
@@ -175,7 +175,7 @@ export default function CreateCampaign() {
     const addLead = (lead) => {
         // Check if lead already added
         if (formData.selectedLeads.some((l) => l.id === lead.id)) {
-            toast.info('Lead already added');
+            toast.info('Müşteri zaten eklendi');
             return;
         }
 
@@ -245,7 +245,7 @@ export default function CreateCampaign() {
             });
 
             if (campaignError || !campaign) {
-                toast.error('Error creating campaign: ' + (campaignError?.message || 'Unknown error'));
+                toast.error('Kampanya oluşturulurken bir hata oluştu: ' + (campaignError?.message || 'Bilinmeyen hata'));
                 return;
             }
 
@@ -260,7 +260,7 @@ export default function CreateCampaign() {
                 const { error: groupsError } = await insertMany('campaign_groups', campaignGroups);
                 if (groupsError) {
                     console.error('Error creating campaign groups:', groupsError);
-                    toast.error('Error linking groups to campaign');
+                    toast.error('Kampanya grupları bağlanırken bir hata oluştu');
                 }
             }
 
@@ -291,15 +291,15 @@ export default function CreateCampaign() {
                 const { error: leadsError } = await insertMany('campaign_leads', campaignLeads);
                 if (leadsError) {
                     console.error('Error creating campaign leads:', leadsError);
-                    toast.error('Error linking leads to campaign');
+                    toast.error('Kampanya müşterileri bağlanırken bir hata oluştu');
                 }
             }
 
-            toast.success('Campaign created successfully!');
+            toast.success('Kampanya başarıyla oluşturuldu!');
             router.push('/campaigns');
         } catch (error) {
             console.error('Error:', error);
-            toast.error('An error occurred while creating campaign');
+            toast.error('Kampanya oluşturulurken bir hata oluştu');
         } finally {
             setIsSaving(false);
         }
