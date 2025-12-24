@@ -40,7 +40,7 @@ import { useEffect } from 'react';
 import EditLeadModal from '../modals/EditLeadModal';
 import QuickActionPanel from '../modals/QuickActionPanel';
 
-export default function LeadDetail({ id }) {
+export default function LeadDetail({ id, campaignId = null }) {
     const router = useRouter();
     const { user, loading: authLoading } = useAuth();
     const [userId, setUserId] = useState(null);
@@ -1162,6 +1162,7 @@ export default function LeadDetail({ id }) {
                 <QuickActionPanel
                     lead={lead}
                     userId={userId}
+                    campaignId={campaignId}
                     initialActionType={selectedActionType}
                     onClose={() => {
                         setShowQuickActionPanel(false);

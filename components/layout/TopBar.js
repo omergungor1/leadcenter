@@ -2,17 +2,19 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Bell, User, Plus, X, LogOut, Loader2 } from 'lucide-react';
+import { Search, Bell, User, Plus, X, LogOut, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import CreateModal from '../modals/CreateModal';
 import NotificationDropdown from '../notifications/NotificationDropdown';
 import { useAuth } from '@/lib/supabase/hooks';
 import { signOut } from '@/lib/supabase/auth';
 import { supabase } from '@/lib/supabase/client';
 import { fetchAll } from '@/lib/supabase/database';
+import { useActivityMode } from '@/lib/contexts/ActivityModeContext';
 
 export default function TopBar() {
     const router = useRouter();
     const { user } = useAuth();
+    const { activityMode, exitActivityMode, goToNextLead, goToPreviousLead } = useActivityMode();
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -215,133 +217,184 @@ export default function TopBar() {
         <>
             <div className="sticky top-0 z-30 bg-white border-b border-slate-200 px-6 py-4">
                 <div className="flex items-center justify-between gap-4">
-                    {/* Search Bar */}
-                    <div className="flex-1 max-w-md relative" ref={searchRef}>
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 z-10" size={20} />
-                        <input
-                            data-search-input
-                            type="text"
-                            placeholder="Müşterileri ara..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onFocus={() => {
-                                if (searchQuery && searchResults.length > 0) {
-                                    setShowSearchDropdown(true);
-                                }
-                            }}
-                            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50"
-                        />
+                    {/* Activity Mode Controls */}
+                    {activityMode.isActive ? (
+                        <>
+                            <div className="flex items-center gap-4 flex-1">
+                                <div className="flex items-center gap-2">
+                                    <h2 className="text-lg font-semibold text-slate-800">
+                                        {activityMode.campaignName}
+                                    </h2>
+                                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
+                                        Aktivite Modu
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-slate-600">
+                                        {activityMode.currentIndex + 1} / {activityMode.leads.length}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={goToPreviousLead}
+                                    disabled={activityMode.currentIndex === 0}
+                                    className="p-2 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Önceki müşteri"
+                                >
+                                    <ChevronLeft size={20} />
+                                </button>
+                                <button
+                                    onClick={goToNextLead}
+                                    disabled={activityMode.currentIndex === activityMode.leads.length - 1}
+                                    className="p-2 hover:bg-slate-100 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Sonraki müşteri"
+                                >
+                                    <ChevronRight size={20} />
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        exitActivityMode();
+                                        router.push(`/campaigns/${activityMode.campaignId}`);
+                                    }}
+                                    className="p-2 hover:bg-red-100 text-red-600 rounded-xl transition-colors"
+                                    title="Aktivite modundan çık"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* Search Bar */}
+                            <div className="flex-1 max-w-md relative" ref={searchRef}>
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 z-10" size={20} />
+                                <input
+                                    data-search-input
+                                    type="text"
+                                    placeholder="Müşterileri ara..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onFocus={() => {
+                                        if (searchQuery && searchResults.length > 0) {
+                                            setShowSearchDropdown(true);
+                                        }
+                                    }}
+                                    className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50"
+                                />
 
-                        {/* Search Results Dropdown */}
-                        {showSearchDropdown && searchQuery && (
-                            <div className="absolute left-0 right-0 top-full mt-2 max-h-60 overflow-y-auto border border-slate-200 rounded-xl bg-white shadow-lg z-50">
-                                {isSearching ? (
-                                    <div className="p-4 text-center text-slate-500">
-                                        <Loader2 size={16} className="animate-spin mx-auto mb-2" />
-                                        <span className="text-sm">Aranıyor...</span>
-                                    </div>
-                                ) : searchResults.length > 0 ? (
-                                    <div className="divide-y divide-slate-200">
-                                        {searchResults.map((lead) => (
-                                            <div
-                                                key={lead.id}
-                                                onClick={() => handleLeadClick(lead.id)}
-                                                className="p-3 hover:bg-slate-50 cursor-pointer transition-colors"
-                                            >
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-slate-800 text-sm">
-                                                        {lead.company || lead.name || 'Unknown'}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500">
-                                                        {lead.business_type ? `${lead.business_type} - ` : ''}
-                                                        {lead.city || '-'}
-                                                        {lead.district ? ` / ${lead.district}` : ''}
-                                                    </p>
-                                                </div>
+                                {/* Search Results Dropdown */}
+                                {showSearchDropdown && searchQuery && (
+                                    <div className="absolute left-0 right-0 top-full mt-2 max-h-60 overflow-y-auto border border-slate-200 rounded-xl bg-white shadow-lg z-50">
+                                        {isSearching ? (
+                                            <div className="p-4 text-center text-slate-500">
+                                                <Loader2 size={16} className="animate-spin mx-auto mb-2" />
+                                                <span className="text-sm">Aranıyor...</span>
                                             </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="p-4 text-center text-slate-500 text-sm">
-                                        Müşteri bulunamadı
+                                        ) : searchResults.length > 0 ? (
+                                            <div className="divide-y divide-slate-200">
+                                                {searchResults.map((lead) => (
+                                                    <div
+                                                        key={lead.id}
+                                                        onClick={() => handleLeadClick(lead.id)}
+                                                        className="p-3 hover:bg-slate-50 cursor-pointer transition-colors"
+                                                    >
+                                                        <div className="flex-1">
+                                                            <p className="font-medium text-slate-800 text-sm">
+                                                                {lead.company || lead.name || 'Unknown'}
+                                                            </p>
+                                                            <p className="text-xs text-slate-500">
+                                                                {lead.business_type ? `${lead.business_type} - ` : ''}
+                                                                {lead.city || '-'}
+                                                                {lead.district ? ` / ${lead.district}` : ''}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="p-4 text-center text-slate-500 text-sm">
+                                                Müşteri bulunamadı
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
-                        )}
-                    </div>
 
-                    {/* Right Side Actions */}
-                    <div className="flex items-center gap-3">
-                        {/* Create Button */}
-                        {/* <button
-                            onClick={() => setShowCreateModal(true)}
-                            className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium"
-                        >
-                            <Plus size={18} />
-                            <span>Oluştur</span>
-                        </button> */}
+                            {/* Right Side Actions */}
+                            <div className="flex items-center gap-3">
+                                {/* Create Button */}
+                                {/* <button
+                                    onClick={() => setShowCreateModal(true)}
+                                    className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium"
+                                >
+                                    <Plus size={18} />
+                                    <span>Oluştur</span>
+                                </button> */}
 
-                        {/* Notifications */}
-                        <div className="relative" ref={notificationRef}>
-                            <button
-                                data-notification-button
-                                onClick={() => setShowNotifications(!showNotifications)}
-                                className="relative p-2 hover:bg-slate-100 rounded-xl transition-colors"
-                            >
-                                <Bell size={20} className="text-slate-600" />
-                                {unreadCount > 0 && (
-                                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                                )}
-                            </button>
+                                {/* Notifications */}
+                                <div className="relative" ref={notificationRef}>
+                                    <button
+                                        data-notification-button
+                                        onClick={() => setShowNotifications(!showNotifications)}
+                                        className="relative p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                                    >
+                                        <Bell size={20} className="text-slate-600" />
+                                        {unreadCount > 0 && (
+                                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                                        )}
+                                    </button>
 
-                            {/* Notification Dropdown */}
-                            {showNotifications && userId && (
-                                <div className="absolute right-0 top-full mt-2 z-50">
-                                    <NotificationDropdown
-                                        userId={userId}
-                                        onClose={() => setShowNotifications(false)}
-                                        onNotificationChange={(newCount) => setUnreadCount(newCount)}
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Profile */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                                className="flex items-center gap-2 p-2 hover:bg-slate-100 rounded-xl transition-colors"
-                            >
-                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-xs">
-                                    {getUserInitials()}
-                                </div>
-                            </button>
-
-                            {/* Profile Dropdown */}
-                            {showProfileMenu && (
-                                <>
-                                    <div
-                                        className="fixed inset-0 z-10"
-                                        onClick={() => setShowProfileMenu(false)}
-                                    />
-                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-20">
-                                        <div className="px-4 py-2 border-b border-slate-200">
-                                            <p className="text-sm font-medium text-slate-800">
-                                                {user?.email.substring(0, 20) || 'Kullanıcı'}
-                                            </p>
+                                    {/* Notification Dropdown */}
+                                    {showNotifications && userId && (
+                                        <div className="absolute right-0 top-full mt-2 z-50">
+                                            <NotificationDropdown
+                                                userId={userId}
+                                                onClose={() => setShowNotifications(false)}
+                                                onNotificationChange={(newCount) => setUnreadCount(newCount)}
+                                            />
                                         </div>
-                                        <button
-                                            onClick={handleLogout}
-                                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                                        >
-                                            <LogOut size={16} />
-                                            <span>Çıkış Yap</span>
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                                    )}
+                                </div>
+
+                                {/* Profile */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setShowProfileMenu(!showProfileMenu)}
+                                        className="flex items-center gap-2 p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                                    >
+                                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-xs">
+                                            {getUserInitials()}
+                                        </div>
+                                    </button>
+
+                                    {/* Profile Dropdown */}
+                                    {showProfileMenu && (
+                                        <>
+                                            <div
+                                                className="fixed inset-0 z-10"
+                                                onClick={() => setShowProfileMenu(false)}
+                                            />
+                                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-20">
+                                                <div className="px-4 py-2 border-b border-slate-200">
+                                                    <p className="text-sm font-medium text-slate-800">
+                                                        {user?.email.substring(0, 20) || 'Kullanıcı'}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                                                >
+                                                    <LogOut size={16} />
+                                                    <span>Çıkış Yap</span>
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 

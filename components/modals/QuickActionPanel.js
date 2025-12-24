@@ -5,7 +5,7 @@ import { X, Minimize2, Maximize2, FileText, Mail, PhoneCall, MapPin, Calendar, C
 import { insert } from '@/lib/supabase/database';
 import { toast } from 'sonner';
 
-export default function QuickActionPanel({ lead, userId, onClose, onActivityAdded, initialActionType = null }) {
+export default function QuickActionPanel({ lead, userId, campaignId = null, onClose, onActivityAdded, initialActionType = null }) {
     const [isMinimized, setIsMinimized] = useState(false);
     const [actionType, setActionType] = useState(initialActionType); // 'note', 'email', 'call', 'visit', 'meeting', 'task'
     const [taskType, setTaskType] = useState(''); // For task selection
@@ -85,6 +85,11 @@ export default function QuickActionPanel({ lead, userId, onClose, onActivityAdde
                 activity_type: finalActivityType,
                 content: formData.content,
             };
+
+            // Kampanya ID'si varsa ekle
+            if (campaignId) {
+                activityData.campaign_id = campaignId;
+            }
 
             // Add due_date for meeting, task, and todo
             if (actionType === 'meeting' || actionType === 'task' || actionType === 'todo') {

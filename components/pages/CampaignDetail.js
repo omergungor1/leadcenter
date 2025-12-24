@@ -2,17 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Pause, Play, Loader2, Eye, Edit2, X, Save } from 'lucide-react';
+import { ArrowLeft, Pause, Play, Loader2, Eye, Edit2, X, Save, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { formatDate, formatTimeAgo } from '../../utils/formatDate';
 import { useAuth } from '@/lib/supabase/hooks';
 import { fetchById, fetchAll, updateById } from '@/lib/supabase/database';
 import { supabase } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { useActivityMode } from '@/lib/contexts/ActivityModeContext';
+import LeadDetail from './LeadDetail';
 
 export default function CampaignDetail({ id }) {
     const router = useRouter();
     const { user, loading: authLoading } = useAuth();
+    const { activityMode, startActivityMode, getCurrentLead } = useActivityMode();
     const [userId, setUserId] = useState(null);
     const [campaign, setCampaign] = useState(null);
     const [campaignLeads, setCampaignLeads] = useState([]);
@@ -29,6 +32,7 @@ export default function CampaignDetail({ id }) {
         content: '',
     });
     const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+    const [isLoadingActivityMode, setIsLoadingActivityMode] = useState(false);
 
     // Fetch user ID
     useEffect(() => {
@@ -383,6 +387,89 @@ export default function CampaignDetail({ id }) {
         }
     };
 
+    const handleStartActivityMode = async () => {
+        if (!campaign || !userId) return;
+
+        setIsLoadingActivityMode(true);
+        try {
+            // Tüm kampanya leadlerini topla
+            const allLeadIds = new Set();
+
+            // Campaign_leads tablosundan eklenen leadler
+            campaignLeads.forEach((cl) => {
+                allLeadIds.add(cl.lead_id);
+            });
+
+            // Lead_groups_map üzerinden eklenen leadler
+            groupLeads.forEach((gl) => {
+                allLeadIds.add(gl.lead_id);
+            });
+
+            // Primary_group_id ile otomatik eklenen leadler
+            if (campaignGroups && campaignGroups.length > 0) {
+                const groupIds = campaignGroups.map((cg) => cg.lead_group_id);
+                Object.values(leadsData).forEach((lead) => {
+                    if (lead.primary_group_id && groupIds.includes(lead.primary_group_id)) {
+                        allLeadIds.add(lead.id);
+                    }
+                });
+            }
+
+            const uniqueLeadIds = Array.from(allLeadIds);
+
+            if (uniqueLeadIds.length === 0) {
+                toast.error('Bu kampanyada müşteri bulunmuyor');
+                return;
+            }
+
+            // Tamamlanmış leadleri filtrele
+            // campaign_id ve campaign_type ile eşleşen, status=completed olan aktiviteleri bul
+            const { data: completedActivities, error: activitiesError } = await supabase
+                .from('activities')
+                .select('lead_id')
+                .eq('campaign_id', campaign.id)
+                .eq('activity_type', campaign.campaign_type)
+                .eq('status', 'completed')
+                .eq('is_deleted', false);
+
+            if (activitiesError) {
+                console.error('Error fetching completed activities:', activitiesError);
+                toast.error('Aktiviteler yüklenirken hata oluştu');
+                return;
+            }
+
+            // Tamamlanmış lead ID'lerini al
+            const completedLeadIds = new Set(
+                (completedActivities || []).map((a) => a.lead_id)
+            );
+
+            // Henüz tamamlanmamış leadleri filtrele
+            const pendingLeadIds = uniqueLeadIds.filter((leadId) => !completedLeadIds.has(leadId));
+
+            if (pendingLeadIds.length === 0) {
+                toast.error('Tüm müşteriler için aktivite tamamlanmış');
+                return;
+            }
+
+            // Lead detaylarını al
+            const pendingLeads = pendingLeadIds.map((leadId) => leadsData[leadId]).filter(Boolean);
+
+            if (pendingLeads.length === 0) {
+                toast.error('Bekleyen müşteri bilgileri bulunamadı');
+                return;
+            }
+
+            // Aktivite modunu başlat
+            startActivityMode(campaign.id, campaign.name, campaign.campaign_type, pendingLeads);
+            toast.success(`${pendingLeads.length} müşteri ile aktivite modu başlatıldı`);
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error('Bir hata oluştu');
+        } finally {
+            setIsLoadingActivityMode(false);
+        }
+    };
+
     if (authLoading || isLoading) {
         return (
             <div className="p-6 flex items-center justify-center h-full">
@@ -400,6 +487,14 @@ export default function CampaignDetail({ id }) {
                 <p className="text-slate-500">Kampanya bulunamadı</p>
             </div>
         );
+    }
+
+    // Aktivite modu aktifse ve bu kampanya için aktifse LeadDetail göster
+    if (activityMode.isActive && activityMode.campaignId === campaign.id) {
+        const currentLead = getCurrentLead();
+        if (currentLead) {
+            return <LeadDetail id={currentLead.id} campaignId={campaign.id} />;
+        }
     }
 
     return (
@@ -632,6 +727,36 @@ export default function CampaignDetail({ id }) {
 
                 {activeTab === 'activity' && (
                     <div className="space-y-4">
+                        {/* Aktivite Modu Butonu */}
+                        {(campaign?.campaign_type === 'call' || campaign?.campaign_type === 'visit') && (
+                            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
+                                <div>
+                                    <h3 className="font-semibold text-slate-800">Aktivite Modu</h3>
+                                    <p className="text-sm text-slate-600 mt-1">
+                                        Kampanya müşterilerini tek tek gezerek aktivite ekleyin
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={handleStartActivityMode}
+                                    disabled={isLoadingActivityMode}
+                                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isLoadingActivityMode ? (
+                                        <>
+                                            <Loader2 size={18} className="animate-spin" />
+                                            <span>Başlatılıyor...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Zap size={18} />
+                                            <span>Aktivite Modu Başlat</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Aktivite Listesi */}
                         {campaignActivities.length > 0 ? (
                             campaignActivities.map((activity) => {
                                 const lead = leadsData[activity.lead_id];
